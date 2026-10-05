@@ -4,6 +4,7 @@ using ManufacturingAdvanced.CostDrift;
 using ManufacturingAdvanced.PlanningInsight;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
+using ManufacturingAdvanced.ShopFloor;
 using ManufacturingAdvanced.WIPControl;
 
 enum 85000 "MFG Feature" implements "MFG IFeatureSetup"
@@ -40,5 +41,10 @@ enum 85000 "MFG Feature" implements "MFG IFeatureSetup"
     {
         Caption = 'Planning insight';
         Implementation = "MFG IFeatureSetup" = "MFG Planning Feature Setup";
+    }
+    value(6; MFGShopFloor)
+    {
+        Caption = 'Shop floor terminal';
+        Implementation = "MFG IFeatureSetup" = "MFG Shop Floor Feature Setup";
     }
 }

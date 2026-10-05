@@ -4,6 +4,7 @@ using ManufacturingAdvanced.CostDrift;
 using ManufacturingAdvanced.PlanningInsight;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
+using ManufacturingAdvanced.ShopFloor;
 using ManufacturingAdvanced.WIPControl;
 
 permissionset 85001 "MFG Read"
@@ -34,5 +35,8 @@ permissionset 85001 "MFG Read"
         tabledata "MFG Planning Run" = R,
         tabledata "MFG Planning Message" = R,
         tabledata "MFG Item Planning Insight" = R,
-        tabledata "MFG Planning Rule" = R;
+        tabledata "MFG Planning Rule" = R,
+        tabledata "MFG Shop Floor Setup" = R,
+        tabledata "MFG Shop Floor Session" = R,
+        tabledata "MFG Shop Floor Event" = R;
 }

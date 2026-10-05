@@ -4,6 +4,7 @@ using ManufacturingAdvanced.CostDrift;
 using ManufacturingAdvanced.PlanningInsight;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
+using ManufacturingAdvanced.ShopFloor;
 using ManufacturingAdvanced.WIPControl;
 
 permissionset 85000 "MFG Objects"
@@ -137,5 +138,24 @@ permissionset 85000 "MFG Objects"
         codeunit "MFG Planning No Advisor" = X,
         codeunit "MFG Advise Reschedules" = X,
         codeunit "MFG Advise Quantity Changes" = X,
-        codeunit "MFG Advise Cancel And New" = X;
+        codeunit "MFG Advise Cancel And New" = X,
+        table "MFG Shop Floor Setup" = X,
+        table "MFG Shop Floor Session" = X,
+        table "MFG Shop Floor Event" = X,
+        page "MFG Shop Floor Setup" = X,
+        page "MFG Shop Floor Terminal" = X,
+        page "MFG Output Dialog" = X,
+        page "MFG Downtime Dialog" = X,
+        page "MFG Shop Floor Sessions" = X,
+        page "MFG Shop Floor Events" = X,
+        page "MFG API Shop Floor Operation" = X,
+        page "MFG API Shop Floor Event" = X,
+        page "MFG API Shop Floor Session" = X,
+        page "MFG API Demo Shop Floor" = X,
+        codeunit "MFG Shop Floor Feature Setup" = X,
+        codeunit "MFG Shop Floor App Area Sub." = X,
+        codeunit "MFG Shop Floor Engine" = X,
+        codeunit "MFG Shop Floor Journal Posting" = X,
+        codeunit "MFG Shop Floor Locator" = X,
+        codeunit "MFG Demo Shop Floor" = X;
 }
