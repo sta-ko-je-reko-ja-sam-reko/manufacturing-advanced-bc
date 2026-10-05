@@ -7,8 +7,8 @@ with its tests and its documentation.
 | # | Feature | Mark | Status | Why in this position |
 |---|---|---|---|---|
 | 0 | Foundation | `FEAT-CORE-001` | **Delivered** with the scaffold | Everything else registers through it |
-| 1 | Release Pre-flight | `FEAT-PRE-001` | Next | The cheapest guardrail with the most visible pay-off: it turns a posting error a week later into a finding at release. It needs no new master data, only reads standard setup, and hooks one standard flow (`Prod. Order Status Management`, `OnBeforeChangeStatusOnProdOrder`). It also proves the check-and-finding pattern WIP Control and Refresh Protection reuse |
-| 2 | WIP Control | `FEAT-WIP-001` | Planned | The pitfall with the largest money impact. Its pre-finish checks reuse the pre-flight's check framework |
+| 1 | Release Pre-flight | `FEAT-PRE-001` | **Delivered**, segment 1 (four checks) | The cheapest guardrail with the most visible pay-off: it turns a posting error a week later into a finding at release. It needs no new master data, only reads standard setup, and hooks one standard flow (`Prod. Order Status Management`, `OnBeforeChangeStatusOnProdOrder`). It also proves the check-and-finding pattern WIP Control and Refresh Protection reuse |
+| 2 | WIP Control | `FEAT-WIP-001` | Next | The pitfall with the largest money impact. Its pre-finish checks reuse the pre-flight's check framework |
 | 3 | Refresh Protection | `FEAT-RFP-001` | Planned | Small, self-contained, and the pitfall planners complain about most. Hooks `Refresh Production Order` (`OnBeforeCalcRoutingsOrComponents`, `OnAfterRefreshProdOrder`) |
 | 4 | Standard Cost Drift | `FEAT-STD-001` | Planned | Needs only read access to costs and the standard cost worksheet. Most useful once WIP Control has cleaned up the orders that were never finished |
 | 5 | Planning Insight | `FEAT-PLN-001` | Planned | Needs a history of planning runs before it can say anything, so it records first and advises later |

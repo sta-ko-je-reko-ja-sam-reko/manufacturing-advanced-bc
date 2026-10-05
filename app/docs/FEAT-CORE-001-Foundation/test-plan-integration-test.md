@@ -22,4 +22,4 @@ the client session, which the AL test runner cannot drive.
 - **When** it is closed without enabling or disabling any feature
 - **Then** the session does not restart; after a feature is enabled and the hub is closed, it restarts once
 
-**Automation:** manual, once the first feature ships (the foundation alone has nothing to toggle)
+**Automation:** manual for the restart itself, on `bc29loc`. That enabling a feature moves the fingerprint the hub compares is automated in `MFG Preflight Tests.SwitchingTheFeatureOnMovesTheFingerprint`

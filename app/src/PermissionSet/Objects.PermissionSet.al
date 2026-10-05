@@ -1,5 +1,7 @@
 namespace ManufacturingAdvanced.Core;
 
+using ManufacturingAdvanced.Preflight;
+
 permissionset 85000 "MFG Objects"
 {
     Assignable = false;
@@ -20,5 +22,28 @@ permissionset 85000 "MFG Objects"
         codeunit "MFG Default Feature Setup" = X,
         codeunit "MFG MCP Setup" = X,
         codeunit "MFG No. Series Mgt." = X,
-        codeunit "MFG Config. Package Mgt." = X;
+        codeunit "MFG Config. Package Mgt." = X,
+        table "MFG Preflight Setup" = X,
+        table "MFG Preflight Check" = X,
+        table "MFG Preflight Finding" = X,
+        page "MFG Preflight Setup" = X,
+        page "MFG Preflight Checks" = X,
+        page "MFG Preflight Findings" = X,
+        page "MFG API Preflight Finding" = X,
+        page "MFG API Preflight Check" = X,
+        page "MFG API Preflight Order" = X,
+        page "MFG API Demo Preflight" = X,
+        codeunit "MFG Preflight Feature Setup" = X,
+        codeunit "MFG Preflight App Area Sub." = X,
+        codeunit "MFG Preflight Engine" = X,
+        codeunit "MFG Preflight Reactions" = X,
+        codeunit "MFG Preflight Locator" = X,
+        codeunit "MFG Preflight Events" = X,
+        codeunit "MFG Demo Preflight" = X,
+        codeunit "MFG Preflight No Check" = X,
+        codeunit "MFG Preflight Collector" = X,
+        codeunit "MFG Check Routing Link" = X,
+        codeunit "MFG Check Flushing Tracking" = X,
+        codeunit "MFG Check Missing Bin" = X,
+        codeunit "MFG Check Uncertified Design" = X;
 }
