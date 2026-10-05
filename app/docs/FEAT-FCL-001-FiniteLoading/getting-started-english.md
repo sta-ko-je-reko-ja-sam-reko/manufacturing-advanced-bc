@@ -25,6 +25,10 @@ The work center needs a calendar: run **Calculate Work Center Calendar** as usua
 4. Operations marked **Late** finish after their order is due; **Days late** says by how much. An operation that does
    not **fit the horizon** cannot be done within it at all.
 5. Choose **Production order** to open the order and act on it.
+6. To make the plan the schedule, choose **Apply to orders**. Every operation that fits the horizon moves to its
+   finite starting date on the production order, and Business Central reschedules the rest of the order as if you
+   had changed the date yourself. This needs **Allow applying the plan to orders** on **Finite loading setup**.
+   Calculate again afterwards, because moving one operation also moves the ones after it.
 
 ## Notes
 

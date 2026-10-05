@@ -15,3 +15,6 @@ firm planned operations inserted directly.
 | TEST-07 | The feature off / calculated / refused | `CalculatingIsRefusedWhileTheFeatureIsOff` |
 | TEST-08 | The feature's guided setup step / step 90 opening the setup page | `TheFeatureRegistersAGuidedSetupStep` |
 | TEST-09 | Sample data twice / the package exists | `ImportingSampleDataBuildsThePackage` |
+| TEST-10 | Applying not allowed / the plan applied / refused (FCL-002) | `ApplyingThePlanIsRefusedUnlessAllowed` |
+| TEST-11 | Allowed, a one-day horizon; I fits, J does not / applied twice, through a fake write-back / only I moved and marked, then nothing | `ApplyingThePlanMovesOnlyTheOperationsThatFit` |
+| TEST-12 | A planned operation finished, then deleted / the routing write-back asked / refuses both | `TheRoutingWriteBackLeavesAFinishedOperationAlone` |

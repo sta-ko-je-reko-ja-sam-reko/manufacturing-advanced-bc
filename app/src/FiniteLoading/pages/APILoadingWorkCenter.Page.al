@@ -70,4 +70,22 @@ page 85703 "MFG API Loading Work Center"
         ActionContext.AddEntityKey(Rec.FieldNo(SystemId), Rec.SystemId);
         ActionContext.SetResultCode(WebServiceActionResultCode::Get);
     end;
+
+    /// <summary>
+    /// Applies this work center's calculated load plan to the production orders: every operation that fits the
+    /// horizon is moved to its planned starting date. Refused unless the setup allows it.
+    /// </summary>
+    /// <param name="ActionContext">The OData action context.</param>
+    [ServiceEnabled]
+    procedure ApplyLoadPlan(var ActionContext: WebServiceActionContext)
+    var
+        Engine: Codeunit "MFG Loading Engine";
+    begin
+        Engine.ApplyPlan(Rec."No.");
+
+        ActionContext.SetObjectType(ObjectType::Page);
+        ActionContext.SetObjectId(Page::"MFG API Loading Work Center");
+        ActionContext.AddEntityKey(Rec.FieldNo(SystemId), Rec.SystemId);
+        ActionContext.SetResultCode(WebServiceActionResultCode::Get);
+    end;
 }

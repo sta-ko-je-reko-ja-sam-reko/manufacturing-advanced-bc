@@ -16,6 +16,7 @@ codeunit 89018 "MFG Loading Tests"
     var
         Assert: Codeunit "Library Assert";
         TestCapacitySource: Codeunit "MFG Test Capacity Source";
+        TestPlanWriteBack: Codeunit "MFG Test Plan Write-Back";
 
     [Test]
     procedure TheOrderDueFirstIsLoadedFirst()
@@ -148,6 +149,78 @@ codeunit 89018 "MFG Loading Tests"
     end;
 
     [Test]
+    procedure ApplyingThePlanIsRefusedUnlessAllowed()
+    var
+        Engine: Codeunit "MFG Loading Engine";
+    begin
+        // [GIVEN] The feature is on, but applying the plan to orders is not allowed
+        Prepare(Enum::"MFG Sequencing Strategy"::MFGDueDate, 30);
+        CreateOperation('MFGL-H', WorkDate() + 1, 100);
+        Engine.Calculate(WorkCenterNo());
+
+        // [WHEN] The plan is applied
+        asserterror Engine.ApplyPlan(WorkCenterNo());
+
+        // [THEN] It is refused
+        Assert.ExpectedError('is not allowed');
+    end;
+
+    [Test]
+    procedure ApplyingThePlanMovesOnlyTheOperationsThatFit()
+    var
+        LoadPlanLine: Record "MFG Load Plan Line";
+        Engine: Codeunit "MFG Loading Engine";
+        Locator: Codeunit "MFG Loading Locator";
+    begin
+        // [GIVEN] Applying is allowed, a one-day horizon of 480 minutes; order I due tomorrow needs 300 minutes and
+        // fits, order J due later needs 600 and does not
+        Prepare(Enum::"MFG Sequencing Strategy"::MFGDueDate, 1);
+        AllowWriteBack(true);
+        CreateOperation('MFGL-I', WorkDate() + 1, 300);
+        CreateOperation('MFGL-J', WorkDate() + 5, 600);
+        Engine.Calculate(WorkCenterNo());
+        TestPlanWriteBack.ResetApplied();
+        Locator.ImplementWriteBack(TestPlanWriteBack);
+
+        // [WHEN] The plan is applied, then applied again
+        // [THEN] Only I is moved and marked, and the second time nothing is left to move
+        Assert.AreEqual(1, Engine.ApplyPlan(WorkCenterNo()), 'Only the operation that fits is moved.');
+        Assert.IsTrue(TestPlanWriteBack.WasApplied('MFGL-I'), 'I fits the horizon.');
+        Assert.IsFalse(TestPlanWriteBack.WasApplied('MFGL-J'), 'J does not fit, so it is left alone.');
+        FindLine(LoadPlanLine, 'MFGL-I');
+        Assert.IsTrue(LoadPlanLine."Written Back", 'The moved operation is marked.');
+        Assert.AreEqual(LoadPlanLine."Planned Starting Date", LoadPlanLine."Current Starting Date", 'Its current start is now the planned one.');
+        Assert.AreEqual(0, Engine.ApplyPlan(WorkCenterNo()), 'An operation is moved once.');
+
+        Locator.ResetWriteBack();
+        AllowWriteBack(false);
+    end;
+
+    [Test]
+    procedure TheRoutingWriteBackLeavesAFinishedOperationAlone()
+    var
+        LoadPlanLine: Record "MFG Load Plan Line";
+        ProdOrderRoutingLine: Record "Prod. Order Routing Line";
+        Engine: Codeunit "MFG Loading Engine";
+        RoutingWriteBack: Codeunit "MFG Routing Write-Back";
+    begin
+        // [GIVEN] A planned operation that was finished after the plan was calculated
+        Prepare(Enum::"MFG Sequencing Strategy"::MFGDueDate, 30);
+        CreateOperation('MFGL-K', WorkDate() + 1, 100);
+        Engine.Calculate(WorkCenterNo());
+        ProdOrderRoutingLine.Get(ProdOrderRoutingLine.Status::"Firm Planned", 'MFGL-K', 10000, 'MFGL-ROUTING', '10');
+        ProdOrderRoutingLine."Routing Status" := ProdOrderRoutingLine."Routing Status"::Finished;
+        ProdOrderRoutingLine.Modify(false);
+
+        // [WHEN] The routing write-back is asked to move it
+        // [THEN] It refuses without touching the operation, as it does for an operation that no longer exists
+        FindLine(LoadPlanLine, 'MFGL-K');
+        Assert.IsFalse(RoutingWriteBack.Apply(LoadPlanLine), 'A finished operation is not moved.');
+        ProdOrderRoutingLine.Delete(false);
+        Assert.IsFalse(RoutingWriteBack.Apply(LoadPlanLine), 'A deleted operation is not moved.');
+    end;
+
+    [Test]
     procedure TheFeatureRegistersAGuidedSetupStep()
     var
         TempSetupStep: Record "MFG Setup Step" temporary;
@@ -196,6 +269,7 @@ codeunit 89018 "MFG Loading Tests"
         Setup."MFG Enabled" := true;
         Setup.Sequencing := Strategy;
         Setup."Horizon Days" := HorizonDays;
+        Setup."Allow Write-Back" := false;
         Setup.Modify(true);
 
         if not CapacityUnitOfMeasure.Get('MFGL-MIN') then begin
@@ -262,6 +336,16 @@ codeunit 89018 "MFG Loading Tests"
         CalendarEntry."Ending Time" := EndingTime;
         CalendarEntry."Capacity (Effective)" := Capacity;
         CalendarEntry.Insert(false);
+    end;
+
+    local procedure AllowWriteBack(Allow: Boolean)
+    var
+        Setup: Record "MFG Loading Setup";
+        FeatureSetup: Codeunit "MFG Loading Feature Setup";
+    begin
+        FeatureSetup.EnsureSetup(Setup);
+        Setup."Allow Write-Back" := Allow;
+        Setup.Modify(true);
     end;
 
     local procedure SetFeature(Enabled: Boolean)

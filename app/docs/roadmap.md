@@ -14,7 +14,7 @@ with its tests and its documentation.
 | 5 | Planning Insight | `FEAT-PLN-001` | **Delivered**, segment 1 (history, three rules) | Needs a history of planning runs before it can say anything, so it records first and advises later |
 | 6 | Shop Floor Terminal | `FEAT-SFT-001` | **Delivered**, segment 1 (start/stop, output, scrap, downtime) | The first capability module. Posts through the standard output and consumption journals |
 | 7 | Engineering Change | `FEAT-ECO-001` | **Delivered**, segment 1 (BOM and routing versions, approval, impact) | Builds on BOM and routing versions; its impact view reuses Refresh Protection's line comparison |
-| 8 | Finite Loading | `FEAT-FCL-001` | **Delivered**, segment 1 (one work center, three strategies, proposal only) | The largest and the one closest to established ISVs. Built only as a light, single-constraint engine |
+| 8 | Finite Loading | `FEAT-FCL-001` | **Delivered**: segment 1 (one work center, three strategies, proposal), segment 2 (apply the plan to the orders) | The largest and the one closest to established ISVs. Built only as a light, single-constraint engine |
 
 ## Rules for every feature
 

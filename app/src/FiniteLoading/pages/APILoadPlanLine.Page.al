@@ -87,6 +87,10 @@ page 85702 "MFG API Load Plan Line"
                 {
                     Caption = 'Days late';
                 }
+                field(writtenBack; Rec."Written Back")
+                {
+                    Caption = 'Applied to order';
+                }
             }
         }
     }

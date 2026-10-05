@@ -35,7 +35,7 @@ Central 29 W1.
 | 5 | Planning Insight | Guardrail | Keeps the history of action messages and advises which planning parameter to adjust |
 | 6 | Shop Floor Terminal | Capability | Start and stop operations, report output, scrap and downtime, posted through the standard journal |
 | 7 | Engineering Change | Capability | Change orders for BOM and routing versions with approval, effective date and impact |
-| 8 | Finite Loading | Capability | Capacity-aware load plan per work center with swappable sequencing |
+| 8 | Finite Loading | Capability | Capacity-aware load plan per work center with swappable sequencing, applied to the orders on request |
 
 The scope is a hypothesis: **there is no customer**. [app/docs/modules.md](app/docs/modules.md) describes each module
 against what standard BC does today, and lists what is deliberately out of scope because Microsoft ships it

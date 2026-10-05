@@ -199,6 +199,7 @@ permissionset 85000 "MFG Objects"
         codeunit "MFG Loading Engine" = X,
         codeunit "MFG Calendar Capacity" = X,
         codeunit "MFG Loading Locator" = X,
+        codeunit "MFG Routing Write-Back" = X,
         codeunit "MFG Sequence By Due Date" = X,
         codeunit "MFG Sequence By Order No." = X,
         codeunit "MFG Sequence Shortest First" = X,
