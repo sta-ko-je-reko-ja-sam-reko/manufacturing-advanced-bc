@@ -20,11 +20,12 @@ add-on for: a shop floor terminal, engineering change orders and light finite lo
 
 ## Status
 
-**Foundation, Release Pre-flight and WIP Control delivered; features in progress.** The foundation is the setup record,
+**Foundation, Release Pre-flight, WIP Control and Refresh Protection delivered; features in progress.** The foundation is the setup record,
 the guided setup with its per-feature wizard, the feature facade, the MCP, configuration-package and number
 series helpers, and the permission sets. Release Pre-flight checks a production order before release with four
 swappable checks. WIP Control finds released orders whose output is complete, values the work in progress they
-still hold, and finishes the ones that pass its checks. The test app holds 52 tests. Both projects build with zero errors and zero warnings against
+still hold, and finishes the ones that pass its checks. Refresh Protection records what every refresh of a production order
+changed, including the changes a planner made by hand, and puts them back. The test app holds 68 tests. Both projects build with zero errors and zero warnings against
 Business Central 29 W1.
 
 | # | Feature | Kind | Status |
@@ -32,8 +33,8 @@ Business Central 29 W1.
 | 0 | Foundation | — | Delivered |
 | 1 | Release Pre-flight: checks before a production order is released | Guardrail | Delivered |
 | 2 | WIP Control: unfinished orders, finish proposals, WIP reconciliation | Guardrail | Delivered (reconciliation with G/L next) |
-| 3 | Refresh Protection: snapshot, diff and re-apply around a refresh | Guardrail | Next |
-| 4 | Standard Cost Drift: stale standards and explained variances | Guardrail | Planned |
+| 3 | Refresh Protection: snapshot, diff and re-apply around a refresh | Guardrail | Delivered |
+| 4 | Standard Cost Drift: stale standards and explained variances | Guardrail | Next |
 | 5 | Planning Insight: action-message history and parameter advice | Guardrail | Planned |
 | 6 | Shop Floor Terminal | Capability | Planned |
 | 7 | Engineering Change | Capability | Planned |
