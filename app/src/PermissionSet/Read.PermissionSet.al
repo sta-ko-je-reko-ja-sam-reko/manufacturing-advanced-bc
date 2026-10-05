@@ -1,6 +1,7 @@
 namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.CostDrift;
+using ManufacturingAdvanced.PlanningInsight;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
 using ManufacturingAdvanced.WIPControl;
@@ -28,5 +29,10 @@ permissionset 85001 "MFG Read"
         tabledata "MFG Cost Drift Setup" = R,
         tabledata "MFG Drift Source" = R,
         tabledata "MFG Cost Drift Line" = R,
-        tabledata "MFG Order Variance" = R;
+        tabledata "MFG Order Variance" = R,
+        tabledata "MFG Planning Setup" = R,
+        tabledata "MFG Planning Run" = R,
+        tabledata "MFG Planning Message" = R,
+        tabledata "MFG Item Planning Insight" = R,
+        tabledata "MFG Planning Rule" = R;
 }

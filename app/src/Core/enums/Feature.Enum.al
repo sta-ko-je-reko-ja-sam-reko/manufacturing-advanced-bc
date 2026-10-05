@@ -1,6 +1,7 @@
 namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.CostDrift;
+using ManufacturingAdvanced.PlanningInsight;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
 using ManufacturingAdvanced.WIPControl;
@@ -34,5 +35,10 @@ enum 85000 "MFG Feature" implements "MFG IFeatureSetup"
     {
         Caption = 'Standard cost drift';
         Implementation = "MFG IFeatureSetup" = "MFG Cost Drift Feature Setup";
+    }
+    value(5; MFGPlanningInsight)
+    {
+        Caption = 'Planning insight';
+        Implementation = "MFG IFeatureSetup" = "MFG Planning Feature Setup";
     }
 }

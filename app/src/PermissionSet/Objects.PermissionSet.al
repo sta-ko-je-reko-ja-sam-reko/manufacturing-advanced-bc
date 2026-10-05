@@ -1,6 +1,7 @@
 namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.CostDrift;
+using ManufacturingAdvanced.PlanningInsight;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
 using ManufacturingAdvanced.WIPControl;
@@ -111,5 +112,30 @@ permissionset 85000 "MFG Objects"
         codeunit "MFG Drift No Source" = X,
         codeunit "MFG Drift Roll-up" = X,
         codeunit "MFG Drift Purchase Price" = X,
-        codeunit "MFG Demo Cost Drift" = X;
+        codeunit "MFG Demo Cost Drift" = X,
+        table "MFG Planning Setup" = X,
+        table "MFG Planning Run" = X,
+        table "MFG Planning Message" = X,
+        table "MFG Item Planning Insight" = X,
+        table "MFG Planning Rule" = X,
+        page "MFG Planning Setup" = X,
+        page "MFG Planning Rules" = X,
+        page "MFG Planning Runs" = X,
+        page "MFG Planning Messages" = X,
+        page "MFG Item Planning Insights" = X,
+        page "MFG API Planning Insight" = X,
+        page "MFG API Planning Message" = X,
+        page "MFG API Planning Rule" = X,
+        page "MFG API Demo Planning" = X,
+        codeunit "MFG Planning Feature Setup" = X,
+        codeunit "MFG Planning App Area Sub." = X,
+        codeunit "MFG Planning Engine" = X,
+        codeunit "MFG Planning Reactions" = X,
+        codeunit "MFG Planning Locator" = X,
+        codeunit "MFG Planning Events" = X,
+        codeunit "MFG Demo Planning" = X,
+        codeunit "MFG Planning No Advisor" = X,
+        codeunit "MFG Advise Reschedules" = X,
+        codeunit "MFG Advise Quantity Changes" = X,
+        codeunit "MFG Advise Cancel And New" = X;
 }
