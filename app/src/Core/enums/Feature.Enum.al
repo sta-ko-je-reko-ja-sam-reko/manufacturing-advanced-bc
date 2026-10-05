@@ -1,6 +1,7 @@
 namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.Preflight;
+using ManufacturingAdvanced.RefreshGuard;
 using ManufacturingAdvanced.WIPControl;
 
 enum 85000 "MFG Feature" implements "MFG IFeatureSetup"
@@ -22,5 +23,10 @@ enum 85000 "MFG Feature" implements "MFG IFeatureSetup"
     {
         Caption = 'WIP control';
         Implementation = "MFG IFeatureSetup" = "MFG WIP Feature Setup";
+    }
+    value(3; MFGRefreshGuard)
+    {
+        Caption = 'Refresh protection';
+        Implementation = "MFG IFeatureSetup" = "MFG Refresh Feature Setup";
     }
 }

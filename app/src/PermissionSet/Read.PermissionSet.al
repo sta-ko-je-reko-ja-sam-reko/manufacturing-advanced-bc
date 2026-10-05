@@ -1,6 +1,7 @@
 namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.Preflight;
+using ManufacturingAdvanced.RefreshGuard;
 using ManufacturingAdvanced.WIPControl;
 
 permissionset 85001 "MFG Read"
@@ -17,5 +18,10 @@ permissionset 85001 "MFG Read"
         tabledata "MFG Preflight Finding" = R,
         tabledata "MFG WIP Setup" = R,
         tabledata "MFG Finish Check" = R,
-        tabledata "MFG Finish Proposal" = R;
+        tabledata "MFG Finish Proposal" = R,
+        tabledata "MFG Refresh Setup" = R,
+        tabledata "MFG Refresh Run" = R,
+        tabledata "MFG Refresh Comp. Snapshot" = R,
+        tabledata "MFG Refresh Oper. Snapshot" = R,
+        tabledata "MFG Refresh Change" = R;
 }

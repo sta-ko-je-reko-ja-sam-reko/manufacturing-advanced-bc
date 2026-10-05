@@ -24,3 +24,5 @@ posting, before they cost money. It also adds capabilities the standard product 
   before it is released, and stop or warn about the problems that would make consumption or output fail later.
 - [WIP control](FEAT-WIP-001-WIPControl/getting-started-english.md): find the released production orders that
   were never finished, see the work in progress they still hold, and finish the ones that are ready.
+- [Refresh protection](FEAT-RFP-001-RefreshProtection/getting-started-english.md): see what refreshing a production
+  order changed, including what you had changed by hand, and put it back.

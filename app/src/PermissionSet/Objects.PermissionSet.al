@@ -1,6 +1,7 @@
 namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.Preflight;
+using ManufacturingAdvanced.RefreshGuard;
 using ManufacturingAdvanced.WIPControl;
 
 permissionset 85000 "MFG Objects"
@@ -67,5 +68,28 @@ permissionset 85000 "MFG Objects"
         codeunit "MFG WIP Locator" = X,
         codeunit "MFG Check Missing Consumption" = X,
         codeunit "MFG Check Open Whse. Activity" = X,
-        codeunit "MFG Check Unfinished Ops." = X;
+        codeunit "MFG Check Unfinished Ops." = X,
+        table "MFG Refresh Setup" = X,
+        table "MFG Refresh Run" = X,
+        table "MFG Refresh Comp. Snapshot" = X,
+        table "MFG Refresh Oper. Snapshot" = X,
+        table "MFG Refresh Change" = X,
+        page "MFG Refresh Setup" = X,
+        page "MFG Refresh Runs" = X,
+        page "MFG Refresh Changes" = X,
+        page "MFG API Refresh Run" = X,
+        page "MFG API Refresh Change" = X,
+        page "MFG API Demo Refresh" = X,
+        codeunit "MFG Refresh Feature Setup" = X,
+        codeunit "MFG Refresh App Area Sub." = X,
+        codeunit "MFG Refresh Engine" = X,
+        codeunit "MFG Refresh Reactions" = X,
+        codeunit "MFG Refresh Locator" = X,
+        codeunit "MFG Refresh Events" = X,
+        codeunit "MFG Refresh Session" = X,
+        codeunit "MFG Refresh Notification" = X,
+        codeunit "MFG Demo Refresh" = X,
+        codeunit "MFG Refresh No Object" = X,
+        codeunit "MFG Refresh Components" = X,
+        codeunit "MFG Refresh Operations" = X;
 }
