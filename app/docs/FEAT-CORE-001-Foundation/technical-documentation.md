@@ -1,5 +1,7 @@
 # FEAT-CORE-001 - Foundation
 
+Segments: **CORE-001** setup, guided setup, MCP and package helpers; **CORE-002** the production manager role centre.
+
 > **Source/legacy reference:** N/A (greenfield).
 > **Affected objects:** foundation setup, feature enum and facade, guided setup hub and wizard, install and
 > upgrade, MCP, configuration package and number series helpers, permission sets.
@@ -21,6 +23,14 @@
    areas take effect.
 5. A feature's sample data seeder may build that feature's configuration package through
    `MFG Config. Package Mgt.`, only when the user chose to load sample data.
+6. **Role centre (CORE-002).** Profile *Production manager (Manufacturing Advanced)* opens
+   `MFG Production Manager RC`: the standard manufacturing lists (released and firm planned orders, production BOMs,
+   routings, work and machine centers), one section per feature and the guided setup. Its *Production activities*
+   part shows what needs attention — pre-flight errors, refresh changes to restore, operations running, late
+   operations, orders ready to finish, WIP to investigate, drifted standard costs, changes pending approval and to
+   implement, items with planning advice — each cue and section only in its feature's application area, so a
+   feature that is off stays out of sight. The counts are taken in a page background task (`MFG Activities Cue
+   Calc`) over a temporary cue table, so the role centre opens at once; a failed count never blocks it.
 
 ## Data Model
 
@@ -75,6 +85,11 @@ None.
 | Page | 85000 | MFG Setup | ManufacturingAdvanced.Core | Foundation card; opens the guided setup |
 | Page | 85001 | MFG Setup Hub | ManufacturingAdvanced.Core | List over the step buffer; the registered assisted setup; owns the single restart |
 | Page | 85002 | MFG Feature Setup Wizard | ManufacturingAdvanced.Core | NavigatePage, parameterised by step |
+| Table | 85003 | MFG Activities Cue | ManufacturingAdvanced.Core | `TableType = Temporary`; one Integer per cue (CORE-002) |
+| Codeunit | 85009 | MFG Activities Cue Calc | ManufacturingAdvanced.Core | Page background task: CollectCounts, keyed by cue field number |
+| Page | 85003 | MFG Production Activities | ManufacturingAdvanced.Core | CardPart with the cues and their drill-downs |
+| Page | 85004 | MFG Production Manager RC | ManufacturingAdvanced.Core | Role centre |
+| Profile | — | MFG Production Manager | ManufacturingAdvanced.Core | Opens the role centre |
 | Permission set | 85000 | MFG Objects | ManufacturingAdvanced.Core | Execute on every object; not assignable |
 | Permission set | 85001 | MFG Read | ManufacturingAdvanced.Core | Read access |
 | Permission set | 85002 | MFG Full | ManufacturingAdvanced.Core | Full access |
@@ -87,12 +102,13 @@ where every feature is still off.
 ```
 app/src/
 ├── Core/
-│   ├── codeunits/  ConfigPackageMgt, DefaultFeatureSetup, FeatureMgt, GuidedSetup, Install,
+│   ├── codeunits/  ActivitiesCueCalc, ConfigPackageMgt, DefaultFeatureSetup, FeatureMgt, GuidedSetup, Install,
 │   │               MCPSetup, NoSeriesMgt, SetupLogic, Upgrade
 │   ├── enums/      Feature, SetupStepStatus
 │   ├── interfaces/ IFeatureSetup, ISetup
-│   ├── pages/      FeatureSetupWizard, Setup, SetupHub
-│   └── tables/     DemoData, Setup, SetupStep
+│   ├── pages/      FeatureSetupWizard, ProductionActivities, ProductionManagerRC, Setup, SetupHub
+│   ├── profiles/   ProductionManager
+│   └── tables/     ActivitiesCue, DemoData, Setup, SetupStep
 └── PermissionSet/  Full, Objects, Read
 ```
 
@@ -120,4 +136,6 @@ app/src/
 ## Known Limitations
 
 - The foundation itself creates no MCP configuration; each feature registers its own (Release Pre-flight is the first).
-- The foundation ships no role centre. One is added when there are features with something to show.
+- The role centre's cues are counts, not amounts; WIP and drift amounts are on the feature pages.
+- The role centre references every feature, so the foundation's namespace depends on the features' namespaces there
+  and only there.

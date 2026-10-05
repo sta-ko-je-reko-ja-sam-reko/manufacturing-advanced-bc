@@ -86,3 +86,10 @@ Unit test plan. Automated in `MFG Foundation Tests` (codeunit 89000) with the fa
 - **Then** none of its fields is left out
 
 **Automation:** `MFG Foundation Tests.AnOwnTableCarriesEveryField`
+
+## TEST-13 — The activities count what needs attention (CORE-002)
+- **Given** the counts as they are
+- **When** a pre-flight error, a ready finish proposal and a change pending approval are added
+- **Then** those three cues count one more, *changes to implement* does not, and every cue has a count
+
+**Automation:** `MFG Foundation Tests.TheActivitiesCountWhatNeedsAttention`

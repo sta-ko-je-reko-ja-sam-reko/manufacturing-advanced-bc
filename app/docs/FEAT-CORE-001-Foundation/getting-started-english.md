@@ -41,6 +41,14 @@ once, however many features you changed.
 On the guided setup list, select the feature and choose **Detailed setup** to open all of its settings,
 including the ones the guided steps do not cover.
 
+### Use the production manager role centre
+
+Choose the profile **Production manager (Manufacturing Advanced)** under **My Settings**, **Role**. Your home page
+then shows the manufacturing lists, a section per feature you switched on, and tiles counting what needs your
+attention: orders that could not be released, orders ready to finish, WIP that does not match the general ledger,
+refresh changes you can restore, drifted standard costs, changes waiting for approval, late operations and more.
+Choose a tile to open what it counts.
+
 ## Notes
 
 - The **Manufacturing advanced setup** page has nothing to fill in. Each feature keeps its own settings.

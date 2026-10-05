@@ -1,6 +1,9 @@
 namespace ManufacturingAdvanced.Test;
 
 using ManufacturingAdvanced.Core;
+using ManufacturingAdvanced.EngineeringChange;
+using ManufacturingAdvanced.Preflight;
+using ManufacturingAdvanced.WIPControl;
 using Microsoft.Foundation.NoSeries;
 using Microsoft.Inventory.Item;
 using System.IO;
@@ -13,6 +16,48 @@ codeunit 89000 "MFG Foundation Tests"
 
     var
         Assert: Codeunit "Library Assert";
+
+    [Test]
+    procedure TheActivitiesCountWhatNeedsAttention()
+    var
+        TempCue: Record "MFG Activities Cue" temporary;
+        PreflightFinding: Record "MFG Preflight Finding";
+        FinishProposal: Record "MFG Finish Proposal";
+        EcoHeader: Record "MFG ECO Header";
+        CueCalc: Codeunit "MFG Activities Cue Calc";
+        Before: Dictionary of [Text, Text];
+        After: Dictionary of [Text, Text];
+    begin
+        // [GIVEN] The counts as they are
+        CueCalc.CollectCounts(Before);
+
+        // [WHEN] A pre-flight error, a finish proposal ready to finish and a change pending approval are added
+        PreflightFinding.Init();
+        PreflightFinding.Severity := PreflightFinding.Severity::MFGError;
+        PreflightFinding."Prod. Order No." := 'MFGF-CUE';
+        PreflightFinding.Insert(false);
+        FinishProposal.Init();
+        FinishProposal."Prod. Order No." := 'MFGF-CUE';
+        FinishProposal.Status := FinishProposal.Status::MFGReady;
+        FinishProposal.Insert(false);
+        EcoHeader.Init();
+        EcoHeader."No." := 'MFGF-CUE';
+        EcoHeader.Status := EcoHeader.Status::MFGPendingApproval;
+        EcoHeader.Insert(false);
+        CueCalc.CollectCounts(After);
+
+        // [THEN] Each of those cues counts one more, and every cue has a count
+        Assert.AreEqual(Count(Before, TempCue.FieldNo("Preflight Errors")) + 1, Count(After, TempCue.FieldNo("Preflight Errors")), 'The pre-flight error is counted.');
+        Assert.AreEqual(Count(Before, TempCue.FieldNo("Orders Ready to Finish")) + 1, Count(After, TempCue.FieldNo("Orders Ready to Finish")), 'The ready order is counted.');
+        Assert.AreEqual(Count(Before, TempCue.FieldNo("ECOs Pending Approval")) + 1, Count(After, TempCue.FieldNo("ECOs Pending Approval")), 'The pending change is counted.');
+        Assert.AreEqual(Count(Before, TempCue.FieldNo("ECOs to Implement")), Count(After, TempCue.FieldNo("ECOs to Implement")), 'A pending change is not one to implement.');
+        Assert.AreEqual(10, After.Count(), 'Every cue gets a count.');
+    end;
+
+    local procedure Count(Results: Dictionary of [Text, Text]; CueFieldNo: Integer) Value: Integer
+    begin
+        Evaluate(Value, Results.Get(Format(CueFieldNo)));
+    end;
 
     [Test]
     procedure TheNoneValueIsNeverEnabled()

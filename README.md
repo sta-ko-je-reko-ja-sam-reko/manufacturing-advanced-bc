@@ -24,9 +24,10 @@ add-on for: a shop floor terminal, engineering change orders and light finite lo
 flushing against warehouse handling, order line protection, applying the finite plan, approval workflows for
 engineering changes) **and four a third** (a nightly WIP run with history, protection against recalculations outside
 the Refresh batch job, finite loading of all work centers with operation order, refreshing the orders an engineering
-change impacts). Each module is switched on separately, has its own setup, application area, API group, MCP
+change impacts), plus purchase price lists for cost drift, machine center calendars for finite loading and a
+production manager role centre. Each module is switched on separately, has its own setup, application area, API group, MCP
 configuration with agent instructions, sample data with a configuration package, and a test codeunit. The test app
-holds 158 tests. Both projects build with zero errors and zero warnings against Business
+holds 166 tests. Both projects build with zero errors and zero warnings against Business
 Central 29 W1.
 
 | # | Feature | Kind | What it does |
