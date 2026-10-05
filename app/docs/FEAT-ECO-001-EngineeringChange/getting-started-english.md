@@ -12,6 +12,9 @@ over. Before you start, you can see which open production orders the change affe
    series**, or search for **Engineering change setup** and choose a number series yourself.
 2. Turn on **Enabled**.
 3. Leave **Approver must differ from requester** on if someone other than the requester must approve.
+   To use Business Central's approval workflows instead, set **Approval method** to **Approval workflow**, then on
+   **Workflows** create a workflow from the template **Engineering change approval workflow**, choose its approvers
+   and enable it.
 4. Close the page. Your session restarts once.
 
 ## Usage
@@ -32,6 +35,9 @@ Choose **Impact** to see the open production orders that use the BOMs and routin
 
 1. Choose **Send for approval**.
 2. The approver opens the change and chooses **Approve** or **Reject**. **Reopen** brings a change back for editing.
+   With an approval workflow, approvers get the request in **Requests to Approve** instead; once it is approved the
+   change is approved. A rejected request, or **Reopen**, brings the change back to open. **Approvals** shows who
+   approved what.
 3. Choose **Implement**. The new versions are certified from the effective date. Production orders refreshed from then
    on use them.
 

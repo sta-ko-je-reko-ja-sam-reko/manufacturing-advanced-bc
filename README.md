@@ -20,9 +20,11 @@ add-on for: a shop floor terminal, engineering change orders and light finite lo
 
 ## Status
 
-**Every module on the roadmap has a first working segment.** Each one is switched on separately, has its own setup,
-application area, API group, MCP configuration with agent instructions, sample data with a configuration package, and
-a test codeunit. The test app holds 124 tests. Both projects build with zero errors and zero warnings against Business
+**Every module on the roadmap has a first working segment, and five have a second** (WIP reconciliation with the G/L,
+flushing against warehouse handling, order line protection, applying the finite plan, approval workflows for
+engineering changes). Each module is switched on separately, has its own setup, application area, API group, MCP
+configuration with agent instructions, sample data with a configuration package, and a test codeunit. The test app
+holds 145 tests. Both projects build with zero errors and zero warnings against Business
 Central 29 W1.
 
 | # | Feature | Kind | What it does |
@@ -34,12 +36,12 @@ Central 29 W1.
 | 4 | Standard Cost Drift | Guardrail | Lists stale standard costs against roll-up and purchase price, feeds the standard cost worksheet, shows order variances |
 | 5 | Planning Insight | Guardrail | Keeps the history of action messages and advises which planning parameter to adjust |
 | 6 | Shop Floor Terminal | Capability | Start and stop operations, report output, scrap and downtime, posted through the standard journal |
-| 7 | Engineering Change | Capability | Change orders for BOM and routing versions with approval, effective date and impact |
+| 7 | Engineering Change | Capability | Change orders for BOM and routing versions with approval on the card or through BC approval workflows, effective date and impact |
 | 8 | Finite Loading | Capability | Capacity-aware load plan per work center with swappable sequencing, applied to the orders on request |
 
 The scope is a hypothesis: **there is no customer**. [app/docs/modules.md](app/docs/modules.md) describes each module
 against what standard BC does today, and lists what is deliberately out of scope because Microsoft ships it
-(Subcontracting, Quality Management). [app/docs/roadmap.md](app/docs/roadmap.md) records what each first segment covers,
+(Subcontracting, Quality Management). [app/docs/roadmap.md](app/docs/roadmap.md) records what each segment covers,
 and [app/docs/architecture.md](app/docs/architecture.md) explains how it is put together.
 
 ## How it is built

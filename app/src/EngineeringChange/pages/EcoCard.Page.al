@@ -1,5 +1,7 @@
 namespace ManufacturingAdvanced.EngineeringChange;
 
+using System.Automation;
+
 page 85802 "MFG ECO Card"
 {
     PageType = Document;
@@ -155,6 +157,19 @@ page 85802 "MFG ECO Card"
                     CurrPage.Update(false);
                 end;
             }
+            action(Approvals)
+            {
+                Caption = 'Approvals';
+                ToolTip = 'See the approval entries of this change, when it is approved through an approval workflow.';
+                Image = Approvals;
+
+                trigger OnAction()
+                var
+                    ApprovalsMgmt: Codeunit "Approvals Mgmt.";
+                begin
+                    ApprovalsMgmt.OpenApprovalEntriesPage(Rec.RecordId());
+                end;
+            }
             action(Impact)
             {
                 Caption = 'Impact';
@@ -201,6 +216,9 @@ page 85802 "MFG ECO Card"
                 {
                 }
                 actionref(ImplementRef; Implement)
+                {
+                }
+                actionref(ApprovalsRef; Approvals)
                 {
                 }
             }

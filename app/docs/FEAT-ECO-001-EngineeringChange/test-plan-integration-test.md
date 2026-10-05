@@ -23,3 +23,24 @@ Integration test plan. Automated in `MFG ECO Integration` (codeunit 89017) with 
 - **Then** the routing version is certified from the effective date
 
 **Automation:** manual, on `bc29loc`
+
+## TEST-04 — Approval through a workflow (ECO-002)
+- **Given** an enabled workflow from the template whose specific approver is the current user
+- **When** a change is sent for approval and the approver approves it
+- **Then** it is pending with one open approval entry carrying its number, then approved by the approver
+
+**Automation:** `MFG ECO Workflow Tests.TheWorkflowApprovesTheChange`
+
+## TEST-05 — Rejection in the workflow
+- **Given** a change sent for approval through the workflow
+- **When** the approver rejects it
+- **Then** the change is open again
+
+**Automation:** `MFG ECO Workflow Tests.RejectingInTheWorkflowReopensTheChange`
+
+## TEST-06 — Reopening cancels the request
+- **Given** a change sent for approval through the workflow
+- **When** the requester reopens it
+- **Then** it is open and has no open approval entry
+
+**Automation:** `MFG ECO Workflow Tests.ReopeningCancelsThePendingRequest`
