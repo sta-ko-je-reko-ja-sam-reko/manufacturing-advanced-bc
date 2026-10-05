@@ -1,6 +1,7 @@
 namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.Preflight;
+using ManufacturingAdvanced.WIPControl;
 
 permissionset 85002 "MFG Full"
 {
@@ -13,5 +14,8 @@ permissionset 85002 "MFG Full"
         tabledata "MFG Demo Data" = RIMD,
         tabledata "MFG Preflight Setup" = RIMD,
         tabledata "MFG Preflight Check" = RIMD,
-        tabledata "MFG Preflight Finding" = RIMD;
+        tabledata "MFG Preflight Finding" = RIMD,
+        tabledata "MFG WIP Setup" = RIMD,
+        tabledata "MFG Finish Check" = RIMD,
+        tabledata "MFG Finish Proposal" = RIMD;
 }

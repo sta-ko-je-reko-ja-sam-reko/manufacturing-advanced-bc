@@ -22,3 +22,5 @@ posting, before they cost money. It also adds capabilities the standard product 
 
 - [Release pre-flight](FEAT-PRE-001-ReleasePreflight/getting-started-english.md): check a production order
   before it is released, and stop or warn about the problems that would make consumption or output fail later.
+- [WIP control](FEAT-WIP-001-WIPControl/getting-started-english.md): find the released production orders that
+  were never finished, see the work in progress they still hold, and finish the ones that are ready.
