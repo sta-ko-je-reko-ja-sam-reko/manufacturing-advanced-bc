@@ -13,6 +13,7 @@ codeunit 89023 "MFG ECO Workflow Tests"
     var
         Assert: Codeunit "Library Assert";
         LibraryWorkflow: Codeunit "Library - Workflow";
+        ApproverIdTok: Label 'MFGW-APPROVER', Locked = true;
 
     [Test]
     procedure TheTemplateIsCreatedOnce()
@@ -84,7 +85,8 @@ codeunit 89023 "MFG ECO Workflow Tests"
         Engine: Codeunit "MFG ECO Engine";
         ApprovalsMgmt: Codeunit "Approvals Mgmt.";
     begin
-        // [GIVEN] An enabled engineering change workflow whose approver is the current user
+        // [GIVEN] An enabled engineering change workflow with its own approver (a request whose approver is the sender
+        // is approved at once, as Business Central does)
         Prepare();
         CreateEnabledWorkflow();
         CreateChange(EcoHeader, 'MFGW-003');
@@ -92,21 +94,23 @@ codeunit 89023 "MFG ECO Workflow Tests"
         // [WHEN] The change is sent for approval
         Engine.SubmitForApproval(EcoHeader);
 
-        // [THEN] It is pending, with an open approval entry carrying its number
+        // [THEN] It is pending, with an open approval entry for the approver carrying its number
         Assert.AreEqual(EcoHeader.Status::MFGPendingApproval, EcoHeader.Status, 'The workflow sets the change to pending approval.');
         ApprovalEntry.SetRange("Record ID to Approve", EcoHeader.RecordId());
         ApprovalEntry.SetRange(Status, ApprovalEntry.Status::Open);
         Assert.RecordCount(ApprovalEntry, 1);
         ApprovalEntry.FindFirst();
         Assert.AreEqual(EcoHeader."No.", ApprovalEntry."Document No.", 'The approval entry names the change.');
+        Assert.AreEqual(ApproverIdTok, ApprovalEntry."Approver ID", 'The request goes to the workflow''s approver.');
 
         // [WHEN] The approver approves the request
+        ActAsApprover(EcoHeader);
         ApprovalsMgmt.ApproveRecordApprovalRequest(EcoHeader.RecordId());
 
         // [THEN] The change is approved by the approver
         EcoHeader.Get(EcoHeader."No.");
         Assert.AreEqual(EcoHeader.Status::MFGApproved, EcoHeader.Status, 'The last approval approves the change.');
-        Assert.AreEqual(UserId(), EcoHeader."Approved By", 'The approver is recorded.');
+        Assert.AreEqual(UserId(), EcoHeader."Approved By", 'The user who gave the last approval is recorded.');
     end;
 
     [Test]
@@ -124,6 +128,7 @@ codeunit 89023 "MFG ECO Workflow Tests"
         Engine.SubmitForApproval(EcoHeader);
 
         // [WHEN] The approver rejects the request
+        ActAsApprover(EcoHeader);
         ApprovalsMgmt.RejectRecordApprovalRequest(EcoHeader.RecordId());
 
         // [THEN] The change is open again, as standard documents are after a rejection
@@ -176,21 +181,41 @@ codeunit 89023 "MFG ECO Workflow Tests"
     local procedure CreateEnabledWorkflow()
     var
         Workflow: Record Workflow;
-        UserSetup: Record "User Setup";
         WorkflowMgt: Codeunit "MFG ECO Workflow Mgt.";
     begin
-        if not UserSetup.Get(UserId()) then begin
-            UserSetup.Init();
-            UserSetup."User ID" := CopyStr(UserId(), 1, MaxStrLen(UserSetup."User ID"));
-            UserSetup."Approval Administrator" := true;
-            UserSetup.Insert(false);
-        end;
+        EnsureUserSetup(CopyStr(UserId(), 1, 50));
+        EnsureUserSetup(ApproverIdTok);
 
         LibraryWorkflow.DisableAllWorkflows();
         WorkflowMgt.EnsureTemplate();
         LibraryWorkflow.CopyWorkflowTemplate(Workflow, WorkflowMgt.TemplateCode());
-        LibraryWorkflow.SetWorkflowSpecificApprover(Workflow.Code, UserSetup."User ID");
+        LibraryWorkflow.SetWorkflowSpecificApprover(Workflow.Code, ApproverIdTok);
         LibraryWorkflow.EnableWorkflow(Workflow);
+    end;
+
+    local procedure EnsureUserSetup(UserCode: Code[50])
+    var
+        UserSetup: Record "User Setup";
+    begin
+        if UserSetup.Get(UserCode) then
+            exit;
+        UserSetup.Init();
+        UserSetup."User ID" := UserCode;
+        UserSetup."Approval Administrator" := true;
+        UserSetup.Insert(false);
+    end;
+
+    /// <summary>
+    /// Hands the open request to the current user, as Microsoft's own approval tests do, so the test session can
+    /// act as the approver.
+    /// </summary>
+    local procedure ActAsApprover(EcoHeader: Record "MFG ECO Header")
+    var
+        ApprovalEntry: Record "Approval Entry";
+    begin
+        ApprovalEntry.SetRange("Record ID to Approve", EcoHeader.RecordId());
+        ApprovalEntry.SetRange(Status, ApprovalEntry.Status::Open);
+        ApprovalEntry.ModifyAll("Approver ID", CopyStr(UserId(), 1, MaxStrLen(ApprovalEntry."Approver ID")), false);
     end;
 
     local procedure CreateChange(var EcoHeader: Record "MFG ECO Header"; EcoNo: Code[20])

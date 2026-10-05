@@ -76,7 +76,8 @@ codeunit 85006 "MFG MCP Setup"
 
     /// <summary>
     /// Adds an action-only API page to a configuration, such as a feature's demo data importer, and
-    /// allows its bound actions. The agent may read the page but never write through it.
+    /// allows its bound actions. The agent may read the page but never write through it. Business Central counts
+    /// bound actions as changes, so the configuration must allow create, update and delete tools.
     /// </summary>
     /// <param name="ConfigId">The configuration to add the tool to.</param>
     /// <param name="ApiPageId">The API page whose bound actions are exposed.</param>
@@ -89,6 +90,7 @@ codeunit 85006 "MFG MCP Setup"
         if IsNullGuid(ToolId) then
             exit;
         MCPConfig.AllowRead(ToolId, true);
+        MCPConfig.AllowCreateUpdateDeleteTools(ConfigId, true);
         MCPConfig.AllowActions(ToolId, true);
     end;
 
