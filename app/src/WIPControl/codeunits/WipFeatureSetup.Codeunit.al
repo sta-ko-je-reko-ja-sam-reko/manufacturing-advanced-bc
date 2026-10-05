@@ -91,6 +91,7 @@ codeunit 85200 "MFG WIP Feature Setup" implements "MFG IFeatureSetup"
         Setup.Init();
         Setup."Reconciliation Tolerance" := 1;
         Setup."Reconciliation Days" := 30;
+        Setup."Keep History (Days)" := 90;
         Setup.Insert(true);
     end;
 
@@ -104,6 +105,7 @@ codeunit 85200 "MFG WIP Feature Setup" implements "MFG IFeatureSetup"
         MCPSetup.EnsureApiTool(ConfigId, Page::"MFG API Finish Check", false, true, false);
         MCPSetup.EnsureActionTool(ConfigId, Page::"MFG API WIP Order");
         MCPSetup.EnsureApiTool(ConfigId, Page::"MFG API WIP Reconciliation", false, false, false);
+        MCPSetup.EnsureApiTool(ConfigId, Page::"MFG API WIP Recon. Entry", false, false, false);
         MCPSetup.Activate(ConfigId);
     end;
 

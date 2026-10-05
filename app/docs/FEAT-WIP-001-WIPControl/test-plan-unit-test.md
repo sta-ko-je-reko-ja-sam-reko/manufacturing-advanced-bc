@@ -141,3 +141,31 @@ Unit test plan. Automated in `MFG WIP Tests` (codeunit 89004), with the fake val
 - **Then** G/L WIP 30, unposted cost −30
 
 **Automation:** `MFG WIP Reconciliation Tests.TheDefaultSourceReadsOnlyTheWipAccounts`
+
+## TEST-21 — Every reconciliation is kept in the history (WIP-003)
+- **Given** a released order
+- **When** it is reconciled twice with different G/L figures
+- **Then** two history entries, the last with the last figure, dated on the work date
+
+**Automation:** `MFG WIP Reconciliation Tests.EveryReconciliationIsKeptInTheHistory`
+
+## TEST-22 — History older than the keep period is removed
+- **Given** 90 days kept; entries from 100 and 10 days ago
+- **When** the reconciliation runs
+- **Then** only the old entry is removed
+
+**Automation:** `MFG WIP Reconciliation Tests.HistoryOlderThanTheKeepPeriodIsRemoved`
+
+## TEST-23 — The scheduled run does nothing while the feature is off
+- **Given** the feature off and a reconciliation line from an earlier run
+- **When** the scheduled run fires
+- **Then** the line is still there
+
+**Automation:** `MFG WIP Reconciliation Tests.TheScheduledRunDoesNothingWhileTheFeatureIsOff`
+
+## TEST-24 — The daily run is found and removed
+- **Given** a job queue entry for `MFG WIP Scheduled Run`
+- **When** the scheduler is asked, then told to remove the daily run
+- **Then** it is scheduled, then it is not
+
+**Automation:** `MFG WIP Reconciliation Tests.TheDailyRunIsFoundAndRemoved`

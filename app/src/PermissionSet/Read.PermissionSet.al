@@ -25,6 +25,7 @@ permissionset 85001 "MFG Read"
         tabledata "MFG Finish Check" = R,
         tabledata "MFG Finish Proposal" = R,
         tabledata "MFG WIP Reconciliation" = R,
+        tabledata "MFG WIP Recon. Entry" = R,
         tabledata "MFG Refresh Setup" = R,
         tabledata "MFG Refresh Run" = R,
         tabledata "MFG Refresh Comp. Snapshot" = R,

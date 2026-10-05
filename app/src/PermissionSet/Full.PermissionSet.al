@@ -25,6 +25,7 @@ permissionset 85002 "MFG Full"
         tabledata "MFG Finish Check" = RIMD,
         tabledata "MFG Finish Proposal" = RIMD,
         tabledata "MFG WIP Reconciliation" = RIMD,
+        tabledata "MFG WIP Recon. Entry" = RIMD,
         tabledata "MFG Refresh Setup" = RIMD,
         tabledata "MFG Refresh Run" = RIMD,
         tabledata "MFG Refresh Comp. Snapshot" = RIMD,

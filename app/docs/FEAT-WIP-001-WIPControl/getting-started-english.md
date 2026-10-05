@@ -60,6 +60,13 @@ Choose **Open production order** to look at an order before you decide.
    - **Investigate**: something else explains it, for example a manual journal on the WIP account or a changed
      posting setup.
 
+### Let it run every night
+
+On **WIP control setup**, choose **Schedule daily run**. Every night at 02:00 the proposals are suggested and the
+work in progress is reconciled again, so the lists are current in the morning. **History** on **WIP reconciliation**
+shows earlier results, day by day, so you can see whether a difference is new or has been there for weeks. Choose
+how long history is kept with **Keep reconciliation history (days)**.
+
 ## Notes
 
 - The estimated work in progress is what the order has consumed and used in capacity, minus the value of its

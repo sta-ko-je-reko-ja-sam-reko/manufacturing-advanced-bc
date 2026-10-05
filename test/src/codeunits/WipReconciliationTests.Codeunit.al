@@ -7,6 +7,7 @@ using Microsoft.Inventory.Item;
 using Microsoft.Inventory.Ledger;
 using Microsoft.Manufacturing.Document;
 using System.TestLibraries.Utilities;
+using System.Threading;
 
 codeunit 89020 "MFG WIP Reconciliation Tests"
 {
@@ -129,6 +130,97 @@ codeunit 89020 "MFG WIP Reconciliation Tests"
         Assert.AreEqual(-30, GLSource.UnpostedCost(ProductionOrder), 'The unposted cost is actual cost minus cost posted to G/L.');
     end;
 
+    [Test]
+    procedure EveryReconciliationIsKeptInTheHistory()
+    var
+        ProductionOrder: Record "Production Order";
+        ReconEntry: Record "MFG WIP Recon. Entry";
+    begin
+        // [GIVEN] A released order
+        SetReconciliation(1, 30);
+        CreateOrder(ProductionOrder, ProductionOrder.Status::Released, 'MFGR-008', 0D);
+
+        // [WHEN] It is reconciled twice, with a different G/L figure each time
+        ReconcileWithFake(ProductionOrder, 0, 0);
+        ReconcileWithFake(ProductionOrder, 5, 0);
+
+        // [THEN] Both results are in the history, while the reconciliation shows only the last
+        ReconEntry.SetRange("Prod. Order No.", ProductionOrder."No.");
+        Assert.RecordCount(ReconEntry, 2);
+        ReconEntry.FindLast();
+        Assert.AreEqual(5, ReconEntry."G/L WIP", 'The latest entry holds the latest figure.');
+        Assert.AreEqual(WorkDate(), ReconEntry."Reconciled On", 'The entry is dated on the work date.');
+    end;
+
+    [Test]
+    procedure HistoryOlderThanTheKeepPeriodIsRemoved()
+    var
+        ReconEntry: Record "MFG WIP Recon. Entry";
+        TestGLWipSource: Codeunit "MFG Test GL WIP Source";
+        Locator: Codeunit "MFG WIP Locator";
+        Engine: Codeunit "MFG WIP Engine";
+    begin
+        // [GIVEN] History is kept for 90 days; an entry from 100 days ago and one from 10 days ago
+        SetReconciliation(1, 30);
+        SetKeepHistory(90);
+        AddHistoryEntry('MFGR-OLD', WorkDate() - 100);
+        AddHistoryEntry('MFGR-RECENT', WorkDate() - 10);
+
+        // [WHEN] The reconciliation runs
+        TestGLWipSource.SetAmounts(0, 0);
+        Locator.ImplementGLSource(TestGLWipSource);
+        Engine.Reconcile();
+        Locator.ResetGLSource();
+
+        // [THEN] Only the old entry is gone
+        ReconEntry.SetRange("Prod. Order No.", 'MFGR-OLD');
+        Assert.RecordIsEmpty(ReconEntry);
+        ReconEntry.SetRange("Prod. Order No.", 'MFGR-RECENT');
+        Assert.RecordCount(ReconEntry, 1);
+    end;
+
+    [Test]
+    procedure TheScheduledRunDoesNothingWhileTheFeatureIsOff()
+    var
+        Reconciliation: Record "MFG WIP Reconciliation";
+        Engine: Codeunit "MFG WIP Engine";
+    begin
+        // [GIVEN] The feature is off, and a reconciliation line from an earlier run
+        SetFeature(false);
+        Reconciliation.Init();
+        Reconciliation."Prod. Order Status" := Reconciliation."Prod. Order Status"::Released;
+        Reconciliation."Prod. Order No." := 'MFGR-KEEP';
+        Reconciliation.Insert(false);
+
+        // [WHEN] The scheduled run fires
+        Engine.RunScheduled();
+
+        // [THEN] Nothing was rebuilt
+        Assert.IsTrue(Reconciliation.Get(Reconciliation."Prod. Order Status"::Released, 'MFGR-KEEP'), 'A disabled feature does not run.');
+    end;
+
+    [Test]
+    procedure TheDailyRunIsFoundAndRemoved()
+    var
+        JobQueueEntry: Record "Job Queue Entry";
+        JobScheduler: Codeunit "MFG WIP Job Scheduler";
+    begin
+        // [GIVEN] A job queue entry for the daily run
+        JobScheduler.Unschedule();
+        Assert.IsFalse(JobScheduler.IsScheduled(), 'Nothing is scheduled to begin with.');
+        JobQueueEntry.Init();
+        JobQueueEntry.ID := CreateGuid();
+        JobQueueEntry."Object Type to Run" := JobQueueEntry."Object Type to Run"::Codeunit;
+        JobQueueEntry."Object ID to Run" := Codeunit::"MFG WIP Scheduled Run";
+        JobQueueEntry.Status := JobQueueEntry.Status::"On Hold";
+        JobQueueEntry.Insert(false);
+
+        // [WHEN] / [THEN] It is found, and removing the daily run deletes it
+        Assert.IsTrue(JobScheduler.IsScheduled(), 'The entry runs the daily WIP run.');
+        JobScheduler.Unschedule();
+        Assert.IsFalse(JobScheduler.IsScheduled(), 'Removing the daily run deletes its entry.');
+    end;
+
     local procedure ReconcileWithFake(ProductionOrder: Record "Production Order"; GLWip: Decimal; Unposted: Decimal)
     var
         TestGLWipSource: Codeunit "MFG Test GL WIP Source";
@@ -139,6 +231,36 @@ codeunit 89020 "MFG WIP Reconciliation Tests"
         Locator.ImplementGLSource(TestGLWipSource);
         Engine.ReconcileOrder(ProductionOrder);
         Locator.ResetGLSource();
+    end;
+
+    local procedure SetKeepHistory(Days: Integer)
+    var
+        Setup: Record "MFG WIP Setup";
+    begin
+        Setup.Get();
+        Setup."Keep History (Days)" := Days;
+        Setup.Modify(false);
+    end;
+
+    local procedure SetFeature(Enabled: Boolean)
+    var
+        Setup: Record "MFG WIP Setup";
+        FeatureSetup: Codeunit "MFG WIP Feature Setup";
+    begin
+        FeatureSetup.EnsureSetup(Setup);
+        Setup."MFG Enabled" := Enabled;
+        Setup.Modify(false);
+    end;
+
+    local procedure AddHistoryEntry(OrderNo: Code[20]; OnDate: Date)
+    var
+        ReconEntry: Record "MFG WIP Recon. Entry";
+    begin
+        ReconEntry.Init();
+        ReconEntry."Reconciled On" := OnDate;
+        ReconEntry."Prod. Order Status" := ReconEntry."Prod. Order Status"::Finished;
+        ReconEntry."Prod. Order No." := OrderNo;
+        ReconEntry.Insert(true);
     end;
 
     local procedure SetReconciliation(Tolerance: Decimal; Days: Integer)

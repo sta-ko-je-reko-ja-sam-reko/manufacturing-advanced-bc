@@ -1,7 +1,7 @@
 # FEAT-WIP-001 - WIP Control
 
 Segments: **WIP-001** proposals, checks and finishing; **WIP-002** reconciliation of each order's WIP with the
-G/L WIP accounts.
+G/L WIP accounts; **WIP-003** a scheduled daily run and reconciliation history.
 
 > **Source/legacy reference:** N/A (greenfield).
 > **Affected objects:** feature setup, finish checks, finish proposals, WIP valuation behind an interface,
@@ -50,6 +50,12 @@ orders and finishes them safely.
    A difference within *Reconciliation tolerance* (default 1) is **Matched**; a larger one with more than the
    tolerance not yet posted to G/L is **Not posted to G/L yet** (run *Post Inventory Cost to G/L*); any other is
    **Investigate**. Agents read `wipReconciliations` and call `reconcileWip` on one order.
+7. **Daily run and history (WIP-003).** **Schedule daily run** on the setup creates a recurring job queue entry
+   (daily at 02:00, `Job Queue Entry`.ScheduleRecurrentJobQueueEntryWithRunDateFormula) that runs
+   `MFG WIP Scheduled Run`: **Suggest**, then **Reconcile**, and nothing while the feature is off. **Remove daily run**
+   deletes it. Every reconciled order also gets a **history entry** dated on the work date, so the trend of an order's
+   difference can be followed; entries older than *Keep reconciliation history (days)* (default 90, 0 keeps all) are
+   removed when the reconciliation runs. Agents read `wipReconciliationEntries`.
 
 ## Data Model
 
@@ -65,6 +71,7 @@ orders and finishes them safely.
 | 30 | Update Unit Cost | Boolean | Passed to the standard status change. Default off |
 | 40 | Reconciliation Tolerance | Decimal | Largest difference still matched. Default 1 |
 | 41 | Reconciliation Days | Integer | Finished orders reconciled this many days back from the work date. Default 30 |
+| 50 | Keep History (Days) | Integer | Reconciliation history kept, in days. Default 90; 0 keeps everything (WIP-003) |
 
 `MFG Finish Check` (85201): Check (enum, primary key), Severity (Off, Inform, Block), Description.
 
@@ -95,6 +102,10 @@ orders and finishes them safely.
 | 23 | Unposted Cost | Decimal | Actual cost not posted to G/L |
 | 30 | Status | Enum `MFG WIP Recon. Status` | Matched, Not posted to G/L yet, Investigate |
 | 40 | Reconciled At | DateTime | |
+
+`MFG WIP Recon. Entry` (85204, WIP-003): one row per order per reconciliation — Entry No. (AutoIncrement),
+Reconciled On (work date), order status and number, source no., value WIP, G/L WIP, difference, unposted cost,
+status, reconciled at. Keys by order and date.
 
 ### New Fields on Existing Tables
 
@@ -130,6 +141,9 @@ orders and finishes them safely.
 | Codeunit | 85211 | MFG Check Open Whse. Activity | Check 2 |
 | Codeunit | 85212 | MFG Check Unfinished Ops. | Check 3 |
 | Codeunit | 85213 | MFG WIP GL Source | Default `MFG IGLWipSource` |
+| Codeunit | 85214 | MFG WIP Scheduled Run | Job queue codeunit: `Engine.RunScheduled` (WIP-003) |
+| Codeunit | 85215 | MFG WIP Job Scheduler | Schedule, IsScheduled, Unschedule of the daily run |
+| Table | 85204 | MFG WIP Recon. Entry | Reconciliation history |
 | Page | 85200 | MFG WIP Setup | Setup card (`ApplicationArea = All`) with the checks part |
 | Page | 85201 | MFG Finish Checks | ListPart |
 | Page | 85202 | MFG Finish Proposals | Worksheet: Suggest, Select all ready, Finish selected, WIP reconciliation, Open production order |
@@ -139,6 +153,8 @@ orders and finishes them safely.
 | Page | 85206 | MFG API Demo WIP | API group `demoWip`, bound action `importDemoData` |
 | Page | 85207 | MFG WIP Reconciliation | List: Reconcile, Open production order |
 | Page | 85208 | MFG API WIP Reconciliation | API `wipReconciliations`, read-only |
+| Page | 85209 | MFG WIP Recon. Entries | Reconciliation history |
+| Page | 85210 | MFG API WIP Recon. Entry | API `wipReconciliationEntries`, read-only |
 | Page extension | 85200 | MFG Released Prod. Orders | *Finish proposals* on the released production order list |
 
 ## Files
@@ -147,14 +163,14 @@ orders and finishes them safely.
 app/src/WIPControl/
 ├── codeunits/      CheckMissingConsumption, CheckOpenWhseActivity, CheckUnfinishedOps, DemoWip,
 │                   FinishNoCheck, WipAppAreaSub, WipEngine, WipFeatureSetup, WipFinishOrder,
-│                   WipGLSource, WipLocator, WipValueEntries
+│                   WipGLSource, WipJobScheduler, WipLocator, WipScheduledRun, WipValueEntries
 ├── enums/          FinishCheckSeverity, FinishCheckType, FinishProposalStatus, WipReconStatus
 ├── interfaces/     IFinishCheck, IGLWipSource, IWipValuation
 ├── pageextensions/ ReleasedProdOrders
 ├── pages/          APIDemoWip, APIFinishCheck, APIFinishProposal, APIWipOrder, APIWipReconciliation,
-│                   FinishChecks, FinishProposals, WipReconciliation, WipSetup
+│                   APIWipReconEntry, FinishChecks, FinishProposals, WipReconciliation, WipReconEntries, WipSetup
 ├── tableextensions/WipApplArea
-└── tables/         FinishCheck, FinishProposal, WipReconciliation, WipSetup
+└── tables/         FinishCheck, FinishProposal, WipReconciliation, WipReconEntry, WipSetup
 ```
 
 ## Integration Points
@@ -181,7 +197,7 @@ This feature subscribes to no Microsoft event: it only reads and calls the stand
 
 | Configuration | Tools | Agent instructions |
 |---|---|---|
-| Manufacturing Advanced - WIP Control | `finishProposals` (read), `finishChecks` (read, modify), `wipOrders` (read, `evaluateFinish`, `finishOrder`, `reconcileWip`), `wipReconciliations` (read) | [agent-instructions/MFG-WIP.md](agent-instructions/MFG-WIP.md) |
+| Manufacturing Advanced - WIP Control | `finishProposals` (read), `finishChecks` (read, modify), `wipOrders` (read, `evaluateFinish`, `finishOrder`, `reconcileWip`), `wipReconciliations` (read), `wipReconciliationEntries` (read) | [agent-instructions/MFG-WIP.md](agent-instructions/MFG-WIP.md) |
 | Manufacturing Advanced - Demo WIP Control | `demoWipSet` (`importDemoData`) | [agent-instructions/MFG-Demo-WIP.md](agent-instructions/MFG-Demo-WIP.md) |
 
 ## Data Import
@@ -204,7 +220,9 @@ never in the package.
 - The reconciliation follows `G/L - Item Ledger Relation`, which is filled only when inventory cost is posted to
   G/L; with *Automatic Cost Posting* off, the difference shows as *Not posted to G/L yet* until *Post Inventory
   Cost to G/L* runs. Manual G/L journal entries on a WIP account are not attributed to any order.
-- The reconciliation is rebuilt in full by **Reconcile**; there is no history of earlier runs.
+- The reconciliation is rebuilt in full by **Reconcile**; earlier results live in the history, one entry per order
+  and run, so two runs on the same day give two entries.
+- The daily run is created at 02:00; change its time or recurrence on the job queue entry itself.
 - When output or consumption is missing and checks that would catch it are off, the standard status change asks
   for confirmation in the client; without a client it answers yes.
 - Proposals are rebuilt in full by **Suggest**; there is no scheduled run yet.

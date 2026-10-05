@@ -16,6 +16,8 @@ Tools:
 - `wipReconciliations` lists the last reconciliation per order: status (Released, Finished), order number, item,
   WIP in value entries, WIP in G/L, difference, cost not posted to G/L, and the result (Matched, Not posted to G/L
   yet, Investigate).
+- `wipReconciliationEntries` is the history: the same figures per order and day, kept for a configurable period. Use
+  it to tell a new difference from an old one, and say from which day a difference has been there.
 - `finishChecks` lists the checks before finishing with their severity (Block, Inform, Off). Change a severity only
   when a person asks you to, and never to get a blocked order finished.
 

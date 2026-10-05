@@ -36,5 +36,6 @@ codeunit 85205 "MFG Demo WIP"
         ConfigPackageMgt.AddOwnTable(PackageCodeTok, Database::"MFG Finish Check");
         ConfigPackageMgt.AddOwnTable(PackageCodeTok, Database::"MFG Finish Proposal");
         ConfigPackageMgt.AddOwnTable(PackageCodeTok, Database::"MFG WIP Reconciliation");
+        ConfigPackageMgt.AddOwnTable(PackageCodeTok, Database::"MFG WIP Recon. Entry");
     end;
 }
