@@ -30,4 +30,9 @@ enum 85100 "MFG Preflight Check Type" implements "MFG IPreflightCheck"
         Caption = 'BOM or routing not certified';
         Implementation = "MFG IPreflightCheck" = "MFG Check Uncertified Design";
     }
+    value(5; MFGFlushingWhse)
+    {
+        Caption = 'Flushing method against warehouse handling';
+        Implementation = "MFG IPreflightCheck" = "MFG Check Flushing Whse.";
+    }
 }

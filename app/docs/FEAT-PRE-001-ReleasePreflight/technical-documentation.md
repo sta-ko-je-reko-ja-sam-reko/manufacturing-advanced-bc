@@ -1,7 +1,9 @@
 # FEAT-PRE-001 - Release Pre-flight
 
+Segments: **PRE-001** the first four checks; **PRE-002** flushing method against warehouse handling.
+
 > **Source/legacy reference:** N/A (greenfield).
-> **Affected objects:** feature setup, check configuration, findings, four checks behind an interface, engine,
+> **Affected objects:** feature setup, check configuration, findings, five checks behind an interface, engine,
 > release reaction on `Prod. Order Status Management`, actions on the firm planned and released production
 > order cards, API pages, MCP configurations, sample data and configuration package.
 > **Namespaces:** `ManufacturingAdvanced.Preflight`; tests `ManufacturingAdvanced.Test`.
@@ -24,6 +26,14 @@
      no bin code, so output or consumption cannot post.
    - **BOM or routing not certified** (default *Warning*): the production BOM or routing a line was calculated
      from, or the version of either, is no longer certified or no longer exists.
+   - **Flushing method against warehouse handling** (default *Warning*, PRE-002), for a component with remaining
+     quantity, following the rules of `Whse.-Production Release` and `Prod. Order Warehouse Mgt.`:
+     - a *Pick + Manual*, *Pick + Forward* or *Pick + Backward* component at a location whose *Prod. Consump.
+       Whse. Handling* is *No Warehouse Handling* and that does not *Require Pick*: no pick is ever created;
+     - a *Pick + Forward* component without a routing link code: the standard release creates no pick request
+       for it, and it is flushed at release;
+     - a *Forward* or *Backward* component at a location whose handling is *Warehouse Pick (mandatory)*: no pick
+       is created, so it is consumed from the production bin only if something else put it there.
 3. The findings replace the order's previous findings and are stored with the time and the user.
 4. If any finding has severity *Error* and blocking is on, the status change fails with an error that names the
    order, the number of errors and the first five findings. Because the error rolls back the transaction, the
@@ -108,6 +118,7 @@ Secondary key `Order`: Prod. Order Status, Prod. Order No., Severity.
 | Codeunit | 85111 | MFG Check Flushing Tracking | Check 2 |
 | Codeunit | 85112 | MFG Check Missing Bin | Check 3 |
 | Codeunit | 85113 | MFG Check Uncertified Design | Check 4 |
+| Codeunit | 85114 | MFG Check Flushing Whse. | Check 5 (PRE-002) |
 | Page | 85100 | MFG Preflight Setup | Setup card (`ApplicationArea = All`), with the checks part |
 | Page | 85101 | MFG Preflight Checks | ListPart: severity per check |
 | Page | 85102 | MFG Preflight Findings | List of findings |
@@ -125,7 +136,7 @@ standard order cards also carry `AccessByPermission = tabledata "MFG Preflight S
 
 ```
 app/src/Preflight/
-├── codeunits/      CheckFlushingTracking, CheckMissingBin, CheckRoutingLink, CheckUncertifiedDesign,
+├── codeunits/      CheckFlushingTracking, CheckFlushingWhse, CheckMissingBin, CheckRoutingLink, CheckUncertifiedDesign,
 │                   DemoPreflight, PreflightAppAreaSub, PreflightCollector, PreflightEngine, PreflightEvents,
 │                   PreflightFeatureSetup, PreflightLocator, PreflightNoCheck, PreflightReactions
 ├── enums/          PreflightCheckType, PreflightSeverity
@@ -164,7 +175,7 @@ app/src/Preflight/
 
 Sample data only, through `MFG Demo Preflight`.Import, from the wizard or the `importDemoData` action:
 
-- The four check rows (idempotent through `EnsureChecks`).
+- The five check rows (idempotent through `EnsureChecks`).
 - Firm planned order **MFG-PRE-001** for the first non-blocked item with replenishment *Prod. Order* and a
   certified production BOM, quantity 1, calculated with `Create Prod. Order Lines`. Its first component gets
   routing link **MFG-DEMO** (created if missing), which no operation has, and the checks are run so findings
@@ -185,5 +196,5 @@ Sample data only, through `MFG Demo Preflight`.Import, from the wizard or the `i
   **Run pre-flight** stores all of them.
 - The flushing tracking check counts lot and serial numbers assigned on the component; it does not check that
   the lots are available in the bin the flushing will take them from.
-- A check on whether the component's flushing method agrees with the location's production consumption
-  warehouse handling is not in this segment.
+- The flushing against warehouse handling check reads the location of the component. A blank location is
+  not checked for the pick methods, because its handling comes from the warehouse setup.

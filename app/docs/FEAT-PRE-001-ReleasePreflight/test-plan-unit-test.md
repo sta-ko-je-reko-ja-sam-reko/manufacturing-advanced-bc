@@ -69,7 +69,7 @@ fixed `MFGT-*` keys, so no posting setup is needed.
 ## TEST-10 — Ensuring the checks keeps the user's severity
 - **Given** the checks exist and one was switched off
 - **When** they are ensured again
-- **Then** there are four rows and the switched-off check stays off
+- **Then** there are five rows and the switched-off check stays off
 
 **Automation:** `MFG Preflight Tests.EnsureChecksCreatesEveryCheckAndKeepsTheUsersSeverity`
 
@@ -137,6 +137,34 @@ fixed `MFGT-*` keys, so no posting setup is needed.
 
 ## TEST-20 — Importing sample data twice creates it once
 - **When** the sample data is imported twice
-- **Then** four check rows, at most one sample order, and the configuration package exist
+- **Then** five check rows, at most one sample order, and the configuration package exist
 
 **Automation:** `MFG Preflight Tests.ImportingSampleDataTwiceCreatesItOnce`
+
+## TEST-21 — A pick method without warehouse handling is found (PRE-002)
+- **Given** a Pick + Backward component at a location with no warehouse handling for consumption
+- **When** the flushing against warehouse handling check runs
+- **Then** one finding
+
+**Automation:** `MFG Preflight Tests.PickFlushingWithoutWarehouseHandlingIsFound`
+
+## TEST-22 — Pick + Forward without a routing link is found
+- **Given** at a location with optional warehouse picks, two Pick + Forward components, one with a routing link
+- **When** the check runs
+- **Then** only the one without a routing link is reported
+
+**Automation:** `MFG Preflight Tests.PickForwardWithoutRoutingLinkIsFound`
+
+## TEST-23 — Automatic flushing where the pick is mandatory is found
+- **Given** at a location with mandatory warehouse picks, a backward, a forward and a Pick + Backward component
+- **When** the check runs
+- **Then** the backward and the forward one are reported, the picked one is not
+
+**Automation:** `MFG Preflight Tests.AutomaticFlushingWhereThePickIsMandatoryIsFound`
+
+## TEST-24 — Flushing that fits the warehouse is not found
+- **Given** manual and backward components without warehouse handling, and Pick + Manual at an inventory pick location
+- **When** the check runs
+- **Then** nothing is reported
+
+**Automation:** `MFG Preflight Tests.FlushingThatFitsTheWarehouseIsNotFound`

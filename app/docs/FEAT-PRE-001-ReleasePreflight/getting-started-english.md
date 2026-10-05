@@ -8,7 +8,9 @@ otherwise only show up later, when consumption or output fails to post:
 - a component linked to an operation that is not on the order's routing, so it is never consumed;
 - a lot- or serial-tracked component that is flushed automatically but has no lot or serial number assigned;
 - a component or output with no bin at a location that requires bins;
-- a production BOM or routing that is no longer certified.
+- a production BOM or routing that is no longer certified;
+- a component whose flushing method does not fit the warehouse handling of its location, so it is never picked
+  or is consumed from a bin nothing was picked to.
 
 You decide, check by check, whether a problem stops the release, only warns, or is ignored.
 

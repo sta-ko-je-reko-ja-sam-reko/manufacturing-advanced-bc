@@ -53,6 +53,7 @@ permissionset 85000 "MFG Objects"
         codeunit "MFG Check Flushing Tracking" = X,
         codeunit "MFG Check Missing Bin" = X,
         codeunit "MFG Check Uncertified Design" = X,
+        codeunit "MFG Check Flushing Whse." = X,
         table "MFG WIP Setup" = X,
         table "MFG Finish Check" = X,
         table "MFG Finish Proposal" = X,
