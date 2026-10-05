@@ -8,6 +8,8 @@ codeunit 85207 "MFG WIP Locator"
     var
         IValuation: Interface "MFG IWipValuation";
         IValuationDefined: Boolean;
+        IGLSource: Interface "MFG IGLWipSource";
+        IGLSourceDefined: Boolean;
 
     /// <summary>
     /// Returns the implementation that values an order's work in progress, defaulting to the one that
@@ -39,5 +41,37 @@ codeunit 85207 "MFG WIP Locator"
     procedure ResetValuation()
     begin
         IValuationDefined := false;
+    end;
+
+    /// <summary>
+    /// Returns the implementation that reads an order's WIP from the general ledger, defaulting to the one that
+    /// follows the G/L - Item Ledger Relation to the WIP accounts.
+    /// </summary>
+    /// <returns>The G/L source for this session.</returns>
+    procedure GLSource(): Interface "MFG IGLWipSource"
+    var
+        DefaultGLSource: Codeunit "MFG WIP GL Source";
+    begin
+        if not IGLSourceDefined then
+            ImplementGLSource(DefaultGLSource);
+        exit(IGLSource);
+    end;
+
+    /// <summary>
+    /// Replaces the G/L source for the rest of the session, for tests and dependent apps.
+    /// </summary>
+    /// <param name="Implementation">The implementation to use.</param>
+    procedure ImplementGLSource(Implementation: Interface "MFG IGLWipSource")
+    begin
+        IGLSource := Implementation;
+        IGLSourceDefined := true;
+    end;
+
+    /// <summary>
+    /// Returns to the default G/L source.
+    /// </summary>
+    procedure ResetGLSource()
+    begin
+        IGLSourceDefined := false;
     end;
 }

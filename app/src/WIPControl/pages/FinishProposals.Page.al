@@ -136,6 +136,13 @@ page 85202 "MFG Finish Proposals"
                     Message(FinishedMsg, Engine.FinishSelected());
                 end;
             }
+            action(WipReconciliation)
+            {
+                Caption = 'WIP reconciliation';
+                ToolTip = 'Compare, order by order, the work in progress in the value entries with what the general ledger holds on the WIP accounts.';
+                Image = Reconcile;
+                RunObject = page "MFG WIP Reconciliation";
+            }
             action(OpenProdOrder)
             {
                 Caption = 'Open production order';
@@ -164,6 +171,9 @@ page 85202 "MFG Finish Proposals"
                 {
                 }
                 actionref(OpenProdOrderRef; OpenProdOrder)
+                {
+                }
+                actionref(WipReconciliationRef; WipReconciliation)
                 {
                 }
             }

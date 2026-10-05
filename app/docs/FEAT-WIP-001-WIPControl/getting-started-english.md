@@ -24,6 +24,10 @@ On **WIP control setup**:
 - **Update unit cost on finish**: update the produced item's unit cost when an order is finished, as the
   *Update Unit Cost* option of *Change Status* does.
 - **Checks before finishing**: for each check, choose **Block**, **Inform** or **Off**.
+- **Reconciliation tolerance**: the largest difference between the work in progress in the order's entries and in
+  the general ledger that still counts as matched.
+- **Reconcile orders finished in the last (days)**: finished orders are reconciled for this long after they were
+  finished, together with every released one.
 
 ## Usage
 
@@ -44,6 +48,17 @@ On **WIP control setup**:
    **Failed** with the reason, and the others are still finished.
 
 Choose **Open production order** to look at an order before you decide.
+
+### Reconcile work in progress with the general ledger
+
+1. Search for **WIP reconciliation**, or choose **WIP reconciliation** on **Finish proposals**.
+2. Choose **Reconcile**. Every released order, and every order finished recently, is listed with its work in
+   progress according to its entries and according to the WIP accounts in the general ledger.
+   - **Matched**: the two agree within the tolerance.
+   - **Not posted to G/L yet**: the difference is cost that has not been posted to the general ledger. Run
+     **Post Inventory Cost to G/L** and reconcile again.
+   - **Investigate**: something else explains it, for example a manual journal on the WIP account or a changed
+     posting setup.
 
 ## Notes
 

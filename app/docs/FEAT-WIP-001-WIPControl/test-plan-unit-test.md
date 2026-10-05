@@ -105,3 +105,39 @@ Unit test plan. Automated in `MFG WIP Tests` (codeunit 89004), with the fake val
 - **Then** three checks and the configuration package exist
 
 **Automation:** `MFG WIP Tests.ImportingSampleDataTwiceCreatesItOnce`
+
+## TEST-16 — A difference within the tolerance is matched (WIP-002)
+- **Given** an order with 30 of WIP in its value entries, a G/L source holding 29.50, tolerance 1
+- **When** the order is reconciled
+- **Then** value WIP 30, G/L WIP 29.50, difference 0.50, Matched
+
+**Automation:** `MFG WIP Reconciliation Tests.ADifferenceWithinTheToleranceIsMatched`
+
+## TEST-17 — Cost not posted to G/L explains the difference
+- **Given** an order with 30 of WIP, nothing in G/L and 30 not posted to G/L
+- **When** the order is reconciled
+- **Then** Not posted to G/L yet
+
+**Automation:** `MFG WIP Reconciliation Tests.CostNotPostedToGLExplainsTheDifference`
+
+## TEST-18 — An unexplained difference needs investigating
+- **Given** an order with 30 of WIP, 10 in G/L and nothing unposted
+- **When** the order is reconciled
+- **Then** difference 20, Investigate
+
+**Automation:** `MFG WIP Reconciliation Tests.AnUnexplainedDifferenceNeedsInvestigating`
+
+## TEST-19 — Reconcile covers released and recently finished orders
+- **Given** reconciliation days 30; a released order, one finished 10 days ago and one 60 days ago
+- **When** the reconciliation runs
+- **Then** the first two are reconciled, the third is not
+
+**Automation:** `MFG WIP Reconciliation Tests.ReconcileCoversReleasedAndRecentlyFinishedOrders`
+
+## TEST-20 — The default source reads only the WIP accounts
+- **Given** a WIP account in the inventory posting setup and an order's value entry related to G/L entries of 30
+  on it and 99 on another account; actual cost −50, posted to G/L −20
+- **When** the default G/L source reads the order
+- **Then** G/L WIP 30, unposted cost −30
+
+**Automation:** `MFG WIP Reconciliation Tests.TheDefaultSourceReadsOnlyTheWipAccounts`

@@ -38,6 +38,19 @@ page 85200 "MFG WIP Setup"
                     ApplicationArea = MFGWIPControl;
                 }
             }
+            group(Reconciliation)
+            {
+                Caption = 'Reconciliation with G/L';
+
+                field("Reconciliation Tolerance"; Rec."Reconciliation Tolerance")
+                {
+                    ApplicationArea = MFGWIPControl;
+                }
+                field("Reconciliation Days"; Rec."Reconciliation Days")
+                {
+                    ApplicationArea = MFGWIPControl;
+                }
+            }
             part(Checks; "MFG Finish Checks")
             {
                 ApplicationArea = MFGWIPControl;

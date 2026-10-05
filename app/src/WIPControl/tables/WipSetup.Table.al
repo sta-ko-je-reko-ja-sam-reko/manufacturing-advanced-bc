@@ -25,6 +25,22 @@ table 85200 "MFG WIP Setup"
             MinValue = 0;
             ToolTip = 'Specifies how many days must have passed since the last output was posted before an order whose output is complete is proposed for finishing. Zero proposes it at once.';
         }
+        field(40; "Reconciliation Tolerance"; Decimal)
+        {
+            Caption = 'Reconciliation tolerance';
+            DataClassification = CustomerContent;
+            AutoFormatType = 1;
+            AutoFormatExpression = '';
+            MinValue = 0;
+            ToolTip = 'Specifies the largest difference between the WIP in the value entries and in the general ledger that still counts as matched.';
+        }
+        field(41; "Reconciliation Days"; Integer)
+        {
+            Caption = 'Reconcile orders finished in the last (days)';
+            DataClassification = CustomerContent;
+            MinValue = 0;
+            ToolTip = 'Specifies how many days back, from the work date, finished production orders are reconciled together with every released one.';
+        }
         field(30; "Update Unit Cost"; Boolean)
         {
             Caption = 'Update unit cost on finish';
