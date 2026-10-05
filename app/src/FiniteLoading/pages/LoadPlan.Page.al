@@ -56,6 +56,17 @@ page 85701 "MFG Load Plan"
                 field("Due Date"; Rec."Due Date")
                 {
                 }
+                field("Work Center No."; Rec."Work Center No.")
+                {
+                    Visible = WorkCenterNo = '';
+                }
+                field("Previous Operation No."; Rec."Previous Operation No.")
+                {
+                    Visible = false;
+                }
+                field("Earliest Start Date"; Rec."Earliest Start Date")
+                {
+                }
                 field("Current Starting Date"; Rec."Current Starting Date")
                 {
                 }
@@ -108,6 +119,21 @@ page 85701 "MFG Load Plan"
                     CurrPage.Update(false);
                 end;
             }
+            action(CalculateAll)
+            {
+                Caption = 'Calculate all work centers';
+                ToolTip = 'Load every work center at once, so that an operation cannot start before the previous operations of its routing have ended, on whichever work center they are. No production order is changed.';
+                Image = CalculateCalendar;
+
+                trigger OnAction()
+                var
+                    Engine: Codeunit "MFG Loading Engine";
+                begin
+                    WorkCenterNo := '';
+                    Message(CalculatedMsg, Engine.CalculateAll());
+                    ApplyWorkCenterFilter();
+                end;
+            }
             action(ApplyPlan)
             {
                 Caption = 'Apply to orders';
@@ -118,10 +144,12 @@ page 85701 "MFG Load Plan"
                 var
                     Engine: Codeunit "MFG Loading Engine";
                 begin
-                    if WorkCenterNo = '' then
-                        Error(ChooseWorkCenterErr);
-                    if not Confirm(ApplyQst, false, WorkCenterNo) then
-                        exit;
+                    if WorkCenterNo = '' then begin
+                        if not Confirm(ApplyAllQst, false) then
+                            exit;
+                    end else
+                        if not Confirm(ApplyQst, false, WorkCenterNo) then
+                            exit;
                     Message(AppliedMsg, Engine.ApplyPlan(WorkCenterNo));
                     CurrPage.Update(false);
                 end;
@@ -156,6 +184,9 @@ page 85701 "MFG Load Plan"
                 actionref(CalculateRef; Calculate)
                 {
                 }
+                actionref(CalculateAllRef; CalculateAll)
+                {
+                }
                 actionref(ApplyPlanRef; ApplyPlan)
                 {
                 }
@@ -185,6 +216,7 @@ page 85701 "MFG Load Plan"
         ChooseWorkCenterErr: Label 'Choose a work center first.';
         CalculatedMsg: Label '%1 open operation(s) were loaded.', Comment = '%1 = the number of operations';
         ApplyQst: Label 'Move the operations of work center %1 that fit the horizon to their planned starting dates on the production orders?', Comment = '%1 = the work center number';
+        ApplyAllQst: Label 'Move the operations of every work center that fit the horizon to their planned starting dates on the production orders?';
         AppliedMsg: Label '%1 operation(s) were moved.', Comment = '%1 = the number of operations';
 
     local procedure ApplyWorkCenterFilter()

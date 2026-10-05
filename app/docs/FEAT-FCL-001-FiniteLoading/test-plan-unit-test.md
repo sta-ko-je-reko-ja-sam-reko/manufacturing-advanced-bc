@@ -18,3 +18,6 @@ firm planned operations inserted directly.
 | TEST-10 | Applying not allowed / the plan applied / refused (FCL-002) | `ApplyingThePlanIsRefusedUnlessAllowed` |
 | TEST-11 | Allowed, a one-day horizon; I fits, J does not / applied twice, through a fake write-back / only I moved and marked, then nothing | `ApplyingThePlanMovesOnlyTheOperationsThatFit` |
 | TEST-12 | A planned operation finished, then deleted / the routing write-back asked / refuses both | `TheRoutingWriteBackLeavesAFinishedOperationAlone` |
+| TEST-13 | Operation 10 of 960 minutes on the first work center, operation 20 after it on the second / all calculated / 20 starts the day 10 ends (FCL-003) | `TheNextOperationWaitsForThePreviousOneOnAnotherWorkCenter` |
+| TEST-14 | A one-day horizon; operation 10 does not fit, 20 follows it / all calculated / neither fits | `AnOperationAfterOneThatDoesNotFitDoesNotFitEither` |
+| TEST-15 | Two unrelated orders on two work centers / all calculated / both start today | `OperationsWithoutPreviousOperationsStartAtOnce` |

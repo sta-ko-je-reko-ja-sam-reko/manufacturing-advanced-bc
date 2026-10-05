@@ -122,6 +122,18 @@ table 85701 "MFG Load Plan Line"
             DataClassification = CustomerContent;
             ToolTip = 'Specifies how many days after the due date the operation finishes.';
         }
+        field(41; "Earliest Start Date"; Date)
+        {
+            Caption = 'Earliest start date';
+            DataClassification = CustomerContent;
+            ToolTip = 'Specifies the day the operation''s previous operations end, when all work centers are loaded together. It cannot start earlier.';
+        }
+        field(42; "Previous Operation No."; Code[30])
+        {
+            Caption = 'Previous operation no.';
+            DataClassification = CustomerContent;
+            ToolTip = 'Specifies the operations of the same routing that must be done first, as on the production order routing.';
+        }
         field(40; "Written Back"; Boolean)
         {
             Caption = 'Applied to order';
@@ -146,6 +158,12 @@ table 85701 "MFG Load Plan Line"
         {
         }
         key(NeedSize; "Work Center No.", Need, "Due Date")
+        {
+        }
+        key(PlannedStart; "Planned Starting Date", "Work Center No.", "Sequence No.")
+        {
+        }
+        key(Routing; "Prod. Order Status", "Prod. Order No.", "Routing Reference No.", "Routing No.", "Operation No.")
         {
         }
     }

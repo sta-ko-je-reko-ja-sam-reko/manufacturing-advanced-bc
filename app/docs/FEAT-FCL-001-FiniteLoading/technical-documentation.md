@@ -1,6 +1,7 @@
 # FEAT-FCL-001 - Finite Loading
 
-Segments: **FCL-001** the load plan; **FCL-002** applying it to the production orders.
+Segments: **FCL-001** the load plan; **FCL-002** applying it to the production orders; **FCL-003** all work centers
+at once, with the order of each routing's operations.
 
 > **Source/legacy reference:** N/A (greenfield).
 > **Affected objects:** feature setup, load plan, sequencing strategies and capacity source behind interfaces,
@@ -37,7 +38,15 @@ a proposed plan that changes no production order until the planner applies it.
    operation's current starting time, exactly as a planner would on the order's routing, so Business Central
    reschedules the operation, the operations after it and the order line, and checks reservation date conflicts. A
    moved operation is marked *Applied to order*. A finished or deleted operation is skipped.
-5. Agents use the `mfgLoading` API group: `calculateLoad` on a work center, then `loadPlanLines`, and
+5. **All work centers at once (FCL-003).** **Calculate all work centers** collects the open operations of every work
+   center, sequences each work center with the setup's strategy, and then lets the work centers take turns loading
+   their next operation. An operation is loaded only once the operations listed in its routing line's *Previous
+   Operation No.* (same order, routing reference and routing) are planned, and not before the day the last of them
+   ends: its *Earliest start date*. An operation after one that does not fit does not fit either; operations that
+   could never be planned (a loop in the routing) are marked as not fitting. Previous operations that are not in the
+   plan (finished, or on no work center) do not hold anything up. **Apply to orders** with no work center chosen
+   applies every work center's plan, in the order of the planned starting dates.
+6. Agents use the `mfgLoading` API group: `calculateLoad` on a work center, then `loadPlanLines`, and
    `applyLoadPlan` when a person asks for it.
 
 ## Data Model
@@ -45,7 +54,7 @@ a proposed plan that changes no production order until the planner applies it.
 | Table | ID | Key | Content |
 |---|---|---|---|
 | MFG Loading Setup | 85700 | Primary Key | `MFG Enabled`, Horizon Days, Sequencing (enum), Allow Write-Back (FCL-002) |
-| MFG Load Plan Line | 85701 | Entry No. | Work center, order status and number, routing reference and number, operation, description, due date, capacity need, current starting and ending date, sequence, finite starting and ending date, fits horizon, late, days late, Written Back (FCL-002). Keys for each strategy's order |
+| MFG Load Plan Line | 85701 | Entry No. | Work center, order status and number, routing reference and number, operation, description, due date, capacity need, current starting and ending date, sequence, finite starting and ending date, fits horizon, late, days late, Written Back (FCL-002), Previous Operation No. and Earliest Start Date (FCL-003). Keys for each strategy's order, the planned start and the routing |
 
 New field on an existing table: `Application Area Setup` 85700 *MFG Finite Loading* (tag `MFGFiniteLoading`).
 
@@ -59,16 +68,16 @@ New field on an existing table: `Application Area Setup` 85700 *MFG Finite Loadi
 | Interface | — | MFG IPlanWriteBack | Apply(load plan line): moved |
 | Codeunit | 85700 | MFG Loading Feature Setup | `MFG IFeatureSetup` |
 | Codeunit | 85701 | MFG Loading App Area Sub. | Application area |
-| Codeunit | 85702 | MFG Loading Engine | Calculate (guarded), CalculatePlan, ApplyPlan (guarded, needs Allow Write-Back) |
+| Codeunit | 85702 | MFG Loading Engine | Calculate (guarded), CalculatePlan, CalculateAll (guarded), CalculateAllPlan, ApplyPlan (guarded, needs Allow Write-Back; empty work center = all) |
 | Codeunit | 85703 | MFG Calendar Capacity | Default capacity source: calendar entries' effective capacity |
 | Codeunit | 85704 | MFG Loading Locator | Resolver of the capacity source (`Implement()`, `ResetCapacitySource()`) and of the write-back (`WriteBack()`, `ImplementWriteBack()`, `ResetWriteBack()`) |
 | Codeunit | 85705–85707 | MFG Sequence By Due Date, MFG Sequence By Order No., MFG Sequence Shortest First | The strategies |
 | Codeunit | 85708 | MFG Demo Loading | Sample data and configuration package |
 | Codeunit | 85709 | MFG Routing Write-Back | Default `MFG IPlanWriteBack` |
 | Page | 85700 | MFG Loading Setup | Setup card (`ApplicationArea = All`) |
-| Page | 85701 | MFG Load Plan | Worksheet: work center, Calculate, Apply to orders, Production order |
+| Page | 85701 | MFG Load Plan | Worksheet: work center, Calculate, Calculate all work centers, Apply to orders, Production order |
 | Page | 85702 | MFG API Load Plan Line | API `loadPlanLines`, read-only |
-| Page | 85703 | MFG API Loading Work Center | API `loadingWorkCenters`, bound actions `calculateLoad`, `applyLoadPlan` |
+| Page | 85703 | MFG API Loading Work Center | API `loadingWorkCenters`, bound actions `calculateLoad`, `calculateAllLoads`, `applyLoadPlan` |
 | Page | 85704 | MFG API Demo Loading | API group `demoLoading`, `importDemoData` |
 | Page extension | 85700 | MFG Work Center Card | *Finite load plan* on the work center card |
 
@@ -98,7 +107,7 @@ plan, and then only through the routing line's own validation.
 
 | Configuration | Tools | Agent instructions |
 |---|---|---|
-| Manufacturing Advanced - Finite Loading | `loadPlanLines` (read), `loadingWorkCenters` (read, `calculateLoad`, `applyLoadPlan`) | [agent-instructions/MFG-Loading.md](agent-instructions/MFG-Loading.md) |
+| Manufacturing Advanced - Finite Loading | `loadPlanLines` (read), `loadingWorkCenters` (read, `calculateLoad`, `calculateAllLoads`, `applyLoadPlan`) | [agent-instructions/MFG-Loading.md](agent-instructions/MFG-Loading.md) |
 | Manufacturing Advanced - Demo Finite Loading | `demoLoadingSet` (`importDemoData`) | [agent-instructions/MFG-Demo-Loading.md](agent-instructions/MFG-Demo-Loading.md) |
 
 ## Data Import
@@ -108,8 +117,10 @@ Sample data only: the load plan of the first work center with open operations, a
 
 ## Known Limitations
 
-- One work center at a time, forward from the work date; operations of one order on different work centers are not
-  linked to each other, and wait and move times are not loaded.
+- **Calculate** loads one work center and ignores the order of operations; **Calculate all work centers** respects it.
+  Loading is forward from the work date; wait and move times are not loaded, and a work center does not go back to
+  fill a gap it left while an operation waited for its previous one.
+- A successor may start on the day its previous operation ends: the plan is in days, not hours.
 - Applying moves only the starting date. Business Central's own scheduling then sets the ending date from the
   infinite calendar, and moving one operation shifts the operations after it on the same order, which may be on
   other work centers; recalculate the plan after applying.

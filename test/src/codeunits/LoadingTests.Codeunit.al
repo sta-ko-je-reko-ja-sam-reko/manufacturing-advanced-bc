@@ -221,6 +221,74 @@ codeunit 89018 "MFG Loading Tests"
     end;
 
     [Test]
+    procedure TheNextOperationWaitsForThePreviousOneOnAnotherWorkCenter()
+    var
+        LoadPlanLine: Record "MFG Load Plan Line";
+        Engine: Codeunit "MFG Loading Engine";
+    begin
+        // [GIVEN] 480 minutes a day on both work centers; order M runs operation 10 on the first for 960 minutes, then
+        // operation 20 on the second for 100 minutes
+        Prepare(Enum::"MFG Sequencing Strategy"::MFGDueDate, 30);
+        PrepareSecondWorkCenter();
+        CreateOperationOn('MFGL-M', WorkDate() + 5, WorkCenterNo(), '10', '', 960);
+        CreateOperationOn('MFGL-M', WorkDate() + 5, SecondWorkCenterNo(), '20', '10', 100);
+
+        // [WHEN] All work centers are loaded together
+        Engine.CalculateAll();
+
+        // [THEN] Operation 20 starts the day operation 10 ends, although the second work center is free today
+        FindOperation(LoadPlanLine, 'MFGL-M', '10');
+        Assert.AreEqual(WorkDate() + 1, LoadPlanLine."Planned Ending Date", 'Operation 10 takes two days.');
+        FindOperation(LoadPlanLine, 'MFGL-M', '20');
+        Assert.AreEqual(WorkDate() + 1, LoadPlanLine."Earliest Start Date", 'Operation 20 can start when operation 10 ends.');
+        Assert.AreEqual(WorkDate() + 1, LoadPlanLine."Planned Starting Date", 'Operation 20 waits for operation 10.');
+    end;
+
+    [Test]
+    procedure AnOperationAfterOneThatDoesNotFitDoesNotFitEither()
+    var
+        LoadPlanLine: Record "MFG Load Plan Line";
+        Engine: Codeunit "MFG Loading Engine";
+    begin
+        // [GIVEN] A one-day horizon of 480 minutes; order N runs operation 10 for 600 minutes, then operation 20 for 10
+        Prepare(Enum::"MFG Sequencing Strategy"::MFGDueDate, 1);
+        PrepareSecondWorkCenter();
+        CreateOperationOn('MFGL-N', WorkDate() + 5, WorkCenterNo(), '10', '', 600);
+        CreateOperationOn('MFGL-N', WorkDate() + 5, SecondWorkCenterNo(), '20', '10', 10);
+
+        // [WHEN] All work centers are loaded together
+        Engine.CalculateAll();
+
+        // [THEN] Neither fits: operation 20 cannot start before operation 10 is done
+        FindOperation(LoadPlanLine, 'MFGL-N', '10');
+        Assert.IsFalse(LoadPlanLine."Fits Horizon", 'Operation 10 does not fit.');
+        FindOperation(LoadPlanLine, 'MFGL-N', '20');
+        Assert.IsFalse(LoadPlanLine."Fits Horizon", 'Operation 20 waits for an operation that does not fit.');
+    end;
+
+    [Test]
+    procedure OperationsWithoutPreviousOperationsStartAtOnce()
+    var
+        LoadPlanLine: Record "MFG Load Plan Line";
+        Engine: Codeunit "MFG Loading Engine";
+    begin
+        // [GIVEN] Order P on the first work center and order Q on the second, unrelated
+        Prepare(Enum::"MFG Sequencing Strategy"::MFGDueDate, 30);
+        PrepareSecondWorkCenter();
+        CreateOperationOn('MFGL-P', WorkDate() + 5, WorkCenterNo(), '10', '', 300);
+        CreateOperationOn('MFGL-Q', WorkDate() + 5, SecondWorkCenterNo(), '10', '', 300);
+
+        // [WHEN] All work centers are loaded together
+        Engine.CalculateAll();
+
+        // [THEN] Both start today
+        FindOperation(LoadPlanLine, 'MFGL-P', '10');
+        Assert.AreEqual(WorkDate(), LoadPlanLine."Planned Starting Date", 'P starts today.');
+        FindOperation(LoadPlanLine, 'MFGL-Q', '10');
+        Assert.AreEqual(WorkDate(), LoadPlanLine."Planned Starting Date", 'Q starts today on its own work center.');
+    end;
+
+    [Test]
     procedure TheFeatureRegistersAGuidedSetupStep()
     var
         TempSetupStep: Record "MFG Setup Step" temporary;
@@ -314,6 +382,61 @@ codeunit 89018 "MFG Loading Tests"
         ProdOrderRoutingLine."Work Center No." := WorkCenterNo();
         ProdOrderRoutingLine."Expected Capacity Need" := Minutes * 60000;
         ProdOrderRoutingLine.Insert(false);
+    end;
+
+    local procedure SecondWorkCenterNo(): Code[20]
+    begin
+        exit('MFGL-WC2');
+    end;
+
+    local procedure PrepareSecondWorkCenter()
+    var
+        WorkCenter: Record "Work Center";
+        ProdOrderRoutingLine: Record "Prod. Order Routing Line";
+    begin
+        if not WorkCenter.Get(SecondWorkCenterNo()) then begin
+            WorkCenter.Init();
+            WorkCenter."No." := SecondWorkCenterNo();
+            WorkCenter."Unit of Measure Code" := 'MFGL-MIN';
+            WorkCenter.Insert(false);
+        end;
+        ProdOrderRoutingLine.SetRange("Work Center No.", SecondWorkCenterNo());
+        ProdOrderRoutingLine.DeleteAll(false);
+    end;
+
+    local procedure CreateOperationOn(OrderNo: Code[20]; DueDate: Date; OnWorkCenterNo: Code[20]; OperationNo: Code[10]; PreviousOperationNo: Code[30]; Minutes: Decimal)
+    var
+        ProductionOrder: Record "Production Order";
+        ProdOrderRoutingLine: Record "Prod. Order Routing Line";
+    begin
+        if not ProductionOrder.Get(ProductionOrder.Status::"Firm Planned", OrderNo) then begin
+            ProductionOrder.Init();
+            ProductionOrder.Status := ProductionOrder.Status::"Firm Planned";
+            ProductionOrder."No." := OrderNo;
+            ProductionOrder."Due Date" := DueDate;
+            ProductionOrder.Insert(false);
+        end;
+
+        ProdOrderRoutingLine.Init();
+        ProdOrderRoutingLine.Status := ProductionOrder.Status;
+        ProdOrderRoutingLine."Prod. Order No." := OrderNo;
+        ProdOrderRoutingLine."Routing Reference No." := 10000;
+        ProdOrderRoutingLine."Routing No." := 'MFGL-ROUTING';
+        ProdOrderRoutingLine."Operation No." := OperationNo;
+        ProdOrderRoutingLine."Previous Operation No." := PreviousOperationNo;
+        ProdOrderRoutingLine.Type := ProdOrderRoutingLine.Type::"Work Center";
+        ProdOrderRoutingLine."No." := OnWorkCenterNo;
+        ProdOrderRoutingLine."Work Center No." := OnWorkCenterNo;
+        ProdOrderRoutingLine."Expected Capacity Need" := Minutes * 60000;
+        ProdOrderRoutingLine.Insert(false);
+    end;
+
+    local procedure FindOperation(var LoadPlanLine: Record "MFG Load Plan Line"; OrderNo: Code[20]; OperationNo: Code[10])
+    begin
+        LoadPlanLine.Reset();
+        LoadPlanLine.SetRange("Prod. Order No.", OrderNo);
+        LoadPlanLine.SetRange("Operation No.", OperationNo);
+        LoadPlanLine.FindFirst();
     end;
 
     local procedure FindLine(var LoadPlanLine: Record "MFG Load Plan Line"; OrderNo: Code[20])
