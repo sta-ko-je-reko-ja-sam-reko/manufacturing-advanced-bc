@@ -1,0 +1,46 @@
+{
+  "id": "4c0e07b0-b75e-406e-af1b-70cc7241d2cf",
+  "name": "Manufacturing Advanced",
+  "publisher": "matr",
+  "brief": "Guardrails and capabilities for Business Central manufacturing: WIP control, release checks, standard cost drift, refresh protection, planning insight and shop floor execution.",
+  "description": "Business Central's production module is capable but unforgiving: WIP stays on the balance sheet until somebody finishes an order, a backward-flushed lot-tracked component fails at posting, Refresh Production Order silently discards manual changes, and the planning worksheet buries planners in action messages. This app adds the guardrails that catch those problems before they cost money, and the capabilities manufacturers usually buy elsewhere. Every feature is switched on separately and extended through interfaces.",
+  "version": "1.0.0.0",
+  "privacyStatement": "https://github.com/sta-ko-je-reko-ja-sam-reko/manufacturing-advanced-bc/blob/main/app/docs/privacy.md",
+  "EULA": "https://github.com/sta-ko-je-reko-ja-sam-reko/manufacturing-advanced-bc/blob/main/LICENSE",
+  "help": "https://github.com/sta-ko-je-reko-ja-sam-reko/manufacturing-advanced-bc/blob/main/app/docs/getting-started-english.md",
+  "url": "https://github.com/sta-ko-je-reko-ja-sam-reko/manufacturing-advanced-bc",
+  "contextSensitiveHelpUrl": "https://github.com/sta-ko-je-reko-ja-sam-reko/manufacturing-advanced-bc/blob/main/app/docs/getting-started-english.md",
+  "logo": "img/AppLogo.png",
+  "dependencies": [],
+  "screenshots": [],
+  "platform": "1.0.0.0",
+  "application": "29.0.0.0",
+  "idRanges": [
+    {
+      "from": 85000,
+      "to": 88999
+    }
+  ],
+  "resourceExposurePolicy": {
+    "allowDebugging": true,
+    "allowDownloadingSource": true,
+    "includeSourceInSymbolFile": true
+  },
+  "runtime": "18.0",
+  "target": "Cloud",
+  "features": [
+    "TranslationFile",
+    "NoImplicitWith",
+    "NoPromotedActionProperties"
+  ],
+  "supportedLocales": [
+    "en-US"
+  ],
+  "internalsVisibleTo": [
+    {
+      "id": "778bb19b-9e58-48dd-a9c2-d9f16d7bff6c",
+      "name": "Manufacturing Advanced Tests",
+      "publisher": "matr"
+    }
+  ]
+}
