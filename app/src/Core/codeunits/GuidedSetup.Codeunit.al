@@ -55,6 +55,7 @@ codeunit 85002 "MFG Guided Setup"
     internal procedure ApplyWizardChoices(var TempSetupStep: Record "MFG Setup Step" temporary; Enable: Boolean; CreateNoSeries: Boolean; ImportDemoData: Boolean)
     var
         FeatureMgt: Codeunit "MFG Feature Mgt.";
+        MCPSetup: Codeunit "MFG MCP Setup";
         FeatureSetup: Interface "MFG IFeatureSetup";
     begin
         if TempSetupStep."Has Toggle" then begin
@@ -63,6 +64,7 @@ codeunit 85002 "MFG Guided Setup"
         end else
             EnsureFoundation();
 
+        MCPSetup.EnsureConfigurations();
         FeatureMgt.RefreshExperienceAreas();
     end;
 
