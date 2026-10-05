@@ -1,5 +1,6 @@
 namespace ManufacturingAdvanced.Core;
 
+using ManufacturingAdvanced.CostDrift;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
 using ManufacturingAdvanced.WIPControl;
@@ -91,5 +92,24 @@ permissionset 85000 "MFG Objects"
         codeunit "MFG Demo Refresh" = X,
         codeunit "MFG Refresh No Object" = X,
         codeunit "MFG Refresh Components" = X,
-        codeunit "MFG Refresh Operations" = X;
+        codeunit "MFG Refresh Operations" = X,
+        table "MFG Cost Drift Setup" = X,
+        table "MFG Drift Source" = X,
+        table "MFG Cost Drift Line" = X,
+        table "MFG Order Variance" = X,
+        page "MFG Cost Drift Setup" = X,
+        page "MFG Drift Sources" = X,
+        page "MFG Cost Drift" = X,
+        page "MFG Order Variances" = X,
+        page "MFG API Cost Drift Line" = X,
+        page "MFG API Drift Source" = X,
+        page "MFG API Order Variance" = X,
+        page "MFG API Demo Cost Drift" = X,
+        codeunit "MFG Cost Drift Feature Setup" = X,
+        codeunit "MFG Cost Drift App Area Sub." = X,
+        codeunit "MFG Cost Drift Engine" = X,
+        codeunit "MFG Drift No Source" = X,
+        codeunit "MFG Drift Roll-up" = X,
+        codeunit "MFG Drift Purchase Price" = X,
+        codeunit "MFG Demo Cost Drift" = X;
 }

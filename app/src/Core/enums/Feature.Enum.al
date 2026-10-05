@@ -1,5 +1,6 @@
 namespace ManufacturingAdvanced.Core;
 
+using ManufacturingAdvanced.CostDrift;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
 using ManufacturingAdvanced.WIPControl;
@@ -28,5 +29,10 @@ enum 85000 "MFG Feature" implements "MFG IFeatureSetup"
     {
         Caption = 'Refresh protection';
         Implementation = "MFG IFeatureSetup" = "MFG Refresh Feature Setup";
+    }
+    value(4; MFGCostDrift)
+    {
+        Caption = 'Standard cost drift';
+        Implementation = "MFG IFeatureSetup" = "MFG Cost Drift Feature Setup";
     }
 }
