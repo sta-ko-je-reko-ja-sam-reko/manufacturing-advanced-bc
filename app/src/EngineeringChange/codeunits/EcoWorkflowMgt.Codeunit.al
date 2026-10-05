@@ -54,14 +54,19 @@ codeunit 85810 "MFG ECO Workflow Mgt."
     end;
 
     /// <summary>
-    /// Adds the two engineering change events to the workflow event library, and declares which standard events and
-    /// responses may follow them, so they can be combined in the workflow designer. Idempotent.
+    /// Adds the two engineering change events to the workflow event library, relates approval entries to the change
+    /// (a workflow mixing both cannot be enabled without it), and declares which standard events and responses may
+    /// follow them, so they can be combined in the workflow designer. Idempotent.
     /// </summary>
     procedure AddEventsToLibrary()
     var
+        ApprovalEntry: Record "Approval Entry";
         WorkflowEventHandling: Codeunit "Workflow Event Handling";
         WorkflowResponseHandling: Codeunit "Workflow Response Handling";
+        WorkflowSetup: Codeunit "Workflow Setup";
     begin
+        WorkflowSetup.InsertTableRelation(Database::"MFG ECO Header", 0, Database::"Approval Entry", ApprovalEntry.FieldNo("Record ID to Approve"));
+
         WorkflowEventHandling.AddEventToLibrary(SendEventCodeTok, Database::"MFG ECO Header", SendEventDescTxt, 0, false);
         WorkflowEventHandling.AddEventToLibrary(CancelEventCodeTok, Database::"MFG ECO Header", CancelEventDescTxt, 0, false);
 
@@ -91,8 +96,11 @@ codeunit 85810 "MFG ECO Workflow Mgt."
         WorkflowResponseHandling: Codeunit "Workflow Response Handling";
         BlankDateFormula: DateFormula;
     begin
-        if Workflow.Get(WorkflowSetup.GetWorkflowTemplateCode(TemplateCodeTok)) then
+        if Workflow.Get(WorkflowSetup.GetWorkflowTemplateCode(TemplateCodeTok)) then begin
+            if not Workflow.Template then
+                WorkflowSetup.MarkWorkflowAsTemplate(Workflow);
             exit;
+        end;
 
         WorkflowResponseHandling.CreateResponsesLibrary();
         AddEventsToLibrary();
@@ -108,6 +116,7 @@ codeunit 85810 "MFG ECO Workflow Mgt."
             StatusCondition(Enum::"MFG ECO Status"::MFGOpen), SendEventCodeTok,
             StatusCondition(Enum::"MFG ECO Status"::MFGPendingApproval), CancelEventCodeTok,
             WorkflowStepArgument, true);
+        WorkflowSetup.MarkWorkflowAsTemplate(Workflow);
     end;
 
     /// <summary>
