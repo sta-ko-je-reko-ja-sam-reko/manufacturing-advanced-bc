@@ -20,4 +20,9 @@ enum 85300 "MFG Drift Source Type" implements "MFG IDriftSource"
         Caption = 'Last purchase price';
         Implementation = "MFG IDriftSource" = "MFG Drift Purchase Price";
     }
+    value(3; MFGPriceList)
+    {
+        Caption = 'Purchase price list';
+        Implementation = "MFG IDriftSource" = "MFG Drift Price List";
+    }
 }

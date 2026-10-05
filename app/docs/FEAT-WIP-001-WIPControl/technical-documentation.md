@@ -225,4 +225,4 @@ never in the package.
 - The daily run is created at 02:00; change its time or recurrence on the job queue entry itself.
 - When output or consumption is missing and checks that would catch it are off, the standard status change asks
   for confirmation in the client; without a client it answers yes.
-- Proposals are rebuilt in full by **Suggest**; there is no scheduled run yet.
+- Proposals are rebuilt in full by **Suggest**, by hand or by the daily run.

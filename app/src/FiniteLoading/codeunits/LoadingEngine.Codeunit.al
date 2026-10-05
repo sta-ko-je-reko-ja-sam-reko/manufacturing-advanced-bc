@@ -11,6 +11,7 @@ codeunit 85702 "MFG Loading Engine"
 
     var
         PreviousSeparatorTok: Label '|', Locked = true;
+        CapacityKeyTok: Label '%1|%2', Locked = true;
         WriteBackNotAllowedErr: Label 'Applying the load plan to production orders is not allowed. Turn on Allow applying the plan to orders on the finite loading setup.';
 
     /// <summary>
@@ -200,6 +201,12 @@ codeunit 85702 "MFG Loading Engine"
                 LoadPlanLine."Current Starting Date" := ProdOrderRoutingLine."Starting Date";
                 LoadPlanLine."Current Ending Date" := ProdOrderRoutingLine."Ending Date";
                 LoadPlanLine."Previous Operation No." := ProdOrderRoutingLine."Previous Operation No.";
+                LoadPlanLine."Capacity Type" := ProdOrderRoutingLine.Type;
+                LoadPlanLine."Capacity No." := ProdOrderRoutingLine."No.";
+                if LoadPlanLine."Capacity No." = '' then begin
+                    LoadPlanLine."Capacity Type" := LoadPlanLine."Capacity Type"::"Work Center";
+                    LoadPlanLine."Capacity No." := WorkCenterNo;
+                end;
                 ProductionOrder.SetLoadFields("Due Date");
                 if ProductionOrder.Get(ProdOrderRoutingLine.Status, ProdOrderRoutingLine."Prod. Order No.") then
                     LoadPlanLine."Due Date" := ProductionOrder."Due Date";
@@ -208,19 +215,24 @@ codeunit 85702 "MFG Loading Engine"
         until ProdOrderRoutingLine.Next() = 0;
     end;
 
+    /// <summary>
+    /// Loads one work center in its sequence. Each operation goes onto the calendar of the capacity it runs on: the
+    /// work center itself, or one of its machine centers, each with its own place in the day.
+    /// </summary>
     local procedure Load(WorkCenterNo: Code[20]; HorizonDays: Integer)
     var
         LoadPlanLine: Record "MFG Load Plan Line";
         Locator: Codeunit "MFG Loading Locator";
         CapacitySource: Interface "MFG ICapacitySource";
-        Day: Date;
+        Days: Dictionary of [Text, Date];
+        Capacities: Dictionary of [Text, Decimal];
+        CapacityKey: Text;
         LastDay: Date;
+        Day: Date;
         DayCapacity: Decimal;
     begin
         CapacitySource := Locator.CapacitySource();
-        Day := WorkDate();
         LastDay := WorkDate() + HorizonDays - 1;
-        DayCapacity := CapacitySource.DailyCapacity(WorkCenterNo, Day);
 
         LoadPlanLine.SetCurrentKey("Work Center No.", "Sequence No.");
         LoadPlanLine.SetRange("Work Center No.", WorkCenterNo);
@@ -228,21 +240,37 @@ codeunit 85702 "MFG Loading Engine"
             exit;
 
         repeat
+            CapacityKey := KeyOf(LoadPlanLine);
+            if not Days.ContainsKey(CapacityKey) then begin
+                Days.Add(CapacityKey, WorkDate());
+                Capacities.Add(CapacityKey, CapacitySource.DailyCapacity(LoadPlanLine."Capacity Type", LoadPlanLine."Capacity No.", WorkDate()));
+            end;
+            Day := Days.Get(CapacityKey);
+            DayCapacity := Capacities.Get(CapacityKey);
             LoadOne(LoadPlanLine, CapacitySource, Day, DayCapacity, LastDay);
+            Days.Set(CapacityKey, Day);
+            Capacities.Set(CapacityKey, DayCapacity);
         until LoadPlanLine.Next() = 0;
     end;
 
+    /// <summary>
+    /// Loads every work center together. Each work center's sequence is split into one queue per capacity (the work
+    /// center and each of its machine centers); the queues take turns loading their next operation once its previous
+    /// operations are planned.
+    /// </summary>
     local procedure LoadAll(WorkCenters: List of [Code[20]]; HorizonDays: Integer)
     var
         LoadPlanLine: Record "MFG Load Plan Line";
         Locator: Codeunit "MFG Loading Locator";
         CapacitySource: Interface "MFG ICapacitySource";
-        Queues: Dictionary of [Code[20], List of [Integer]];
-        Days: Dictionary of [Code[20], Date];
-        Capacities: Dictionary of [Code[20], Decimal];
+        Queues: Dictionary of [Text, List of [Integer]];
+        Days: Dictionary of [Text, Date];
+        Capacities: Dictionary of [Text, Decimal];
         Loaded: Dictionary of [Integer, Boolean];
+        CapacityKeys: List of [Text];
         Queue: List of [Integer];
         WorkCenterNo: Code[20];
+        CapacityKey: Text;
         LastDay: Date;
         Day: Date;
         DayCapacity: Decimal;
@@ -254,42 +282,48 @@ codeunit 85702 "MFG Loading Engine"
         CapacitySource := Locator.CapacitySource();
         LastDay := WorkDate() + HorizonDays - 1;
         foreach WorkCenterNo in WorkCenters do begin
-            Clear(Queue);
             LoadPlanLine.SetCurrentKey("Work Center No.", "Sequence No.");
             LoadPlanLine.SetRange("Work Center No.", WorkCenterNo);
             if LoadPlanLine.FindSet() then
                 repeat
+                    CapacityKey := KeyOf(LoadPlanLine);
+                    if not Queues.ContainsKey(CapacityKey) then begin
+                        Clear(Queue);
+                        Queues.Add(CapacityKey, Queue);
+                        CapacityKeys.Add(CapacityKey);
+                        Days.Add(CapacityKey, WorkDate());
+                        Capacities.Add(CapacityKey, CapacitySource.DailyCapacity(LoadPlanLine."Capacity Type", LoadPlanLine."Capacity No.", WorkDate()));
+                    end;
+                    Queue := Queues.Get(CapacityKey);
                     Queue.Add(LoadPlanLine."Entry No.");
+                    Queues.Set(CapacityKey, Queue);
                 until LoadPlanLine.Next() = 0;
-            Queues.Add(WorkCenterNo, Queue);
-            Days.Add(WorkCenterNo, WorkDate());
-            Capacities.Add(WorkCenterNo, CapacitySource.DailyCapacity(WorkCenterNo, WorkDate()));
         end;
 
         repeat
             Progress := false;
-            foreach WorkCenterNo in WorkCenters do begin
-                Queue := Queues.Get(WorkCenterNo);
+            foreach CapacityKey in CapacityKeys do begin
+                Queue := Queues.Get(CapacityKey);
                 if Queue.Count() > 0 then begin
                     LoadPlanLine.Get(Queue.Get(1));
                     PreviousState(LoadPlanLine, Loaded, Blocked, Fits, Earliest);
                     if not Blocked then begin
                         Queue.RemoveAt(1);
-                        Queues.Set(WorkCenterNo, Queue);
+                        Queues.Set(CapacityKey, Queue);
                         Progress := true;
                         LoadPlanLine."Earliest Start Date" := Earliest;
                         if not Fits then
                             MarkNotFitting(LoadPlanLine)
                         else begin
-                            Day := Days.Get(WorkCenterNo);
-                            DayCapacity := Capacities.Get(WorkCenterNo);
+                            Day := Days.Get(CapacityKey);
+                            DayCapacity := Capacities.Get(CapacityKey);
                             if Day < Earliest then begin
                                 Day := Earliest;
-                                DayCapacity := CapacitySource.DailyCapacity(WorkCenterNo, Day);
+                                DayCapacity := CapacitySource.DailyCapacity(LoadPlanLine."Capacity Type", LoadPlanLine."Capacity No.", Day);
                             end;
                             LoadOne(LoadPlanLine, CapacitySource, Day, DayCapacity, LastDay);
-                            Days.Set(WorkCenterNo, Day);
-                            Capacities.Set(WorkCenterNo, DayCapacity);
+                            Days.Set(CapacityKey, Day);
+                            Capacities.Set(CapacityKey, DayCapacity);
                         end;
                         Loaded.Set(LoadPlanLine."Entry No.", LoadPlanLine."Fits Horizon");
                     end;
@@ -298,15 +332,20 @@ codeunit 85702 "MFG Loading Engine"
         until not Progress;
 
         // whatever is left waits for an operation that can never be planned
-        foreach WorkCenterNo in WorkCenters do begin
-            Queue := Queues.Get(WorkCenterNo);
+        foreach CapacityKey in CapacityKeys do begin
+            Queue := Queues.Get(CapacityKey);
             while Queue.Count() > 0 do begin
                 LoadPlanLine.Get(Queue.Get(1));
                 Queue.RemoveAt(1);
-                Queues.Set(WorkCenterNo, Queue);
+                Queues.Set(CapacityKey, Queue);
                 MarkNotFitting(LoadPlanLine);
             end;
         end;
+    end;
+
+    local procedure KeyOf(LoadPlanLine: Record "MFG Load Plan Line"): Text
+    begin
+        exit(StrSubstNo(CapacityKeyTok, LoadPlanLine."Capacity Type".AsInteger(), LoadPlanLine."Capacity No."));
     end;
 
     local procedure PreviousState(LoadPlanLine: Record "MFG Load Plan Line"; Loaded: Dictionary of [Integer, Boolean]; var Blocked: Boolean; var Fits: Boolean; var Earliest: Date)
@@ -364,7 +403,7 @@ codeunit 85702 "MFG Loading Engine"
             if DayCapacity <= 0 then begin
                 Day += 1;
                 if Day <= LastDay then
-                    DayCapacity := CapacitySource.DailyCapacity(LoadPlanLine."Work Center No.", Day);
+                    DayCapacity := CapacitySource.DailyCapacity(LoadPlanLine."Capacity Type", LoadPlanLine."Capacity No.", Day);
             end else begin
                 if Remaining < DayCapacity then
                     Take := Remaining

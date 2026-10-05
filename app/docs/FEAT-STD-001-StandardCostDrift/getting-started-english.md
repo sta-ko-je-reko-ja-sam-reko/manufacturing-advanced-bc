@@ -17,7 +17,8 @@ the variances of recently finished production orders by type, so you can see whe
 4. Optionally choose the **Standard cost worksheet** to send lines to. If you leave it empty, one called MFG-DRIFT is
    created the first time.
 5. Under **Compare standard cost with**, choose which comparisons run: the roll-up of the BOM and routing, the last
-   purchase price, or both.
+   purchase price, and the purchase price lists. A current price list price is used instead of the last purchase
+   price, because it is what the item will cost from now on.
 6. Close the page. Your session restarts once.
 
 ## Usage

@@ -48,7 +48,7 @@ Unit test plan. Automated in `MFG Cost Drift Tests` (codeunit 89009). Fixtures a
 ## TEST-07 — Ensuring the sources keeps the user's choice
 - **Given** the user switched a source off
 - **When** the sources are ensured again
-- **Then** two rows, and the source stays off
+- **Then** three rows, and the source stays off
 
 **Automation:** `MFG Cost Drift Tests.EnsureSourcesKeepsTheUsersChoice`
 
@@ -60,6 +60,34 @@ Unit test plan. Automated in `MFG Cost Drift Tests` (codeunit 89009). Fixtures a
 
 ## TEST-09 — Importing sample data twice creates it once
 - **When** the sample data is imported twice
-- **Then** two sources, the worksheet, and the configuration package exist
+- **Then** three sources, the worksheet, and the configuration package exist
 
 **Automation:** `MFG Cost Drift Tests.ImportingSampleDataTwiceCreatesItOnce`
+
+## TEST-10 — A price list price replaces the last purchase price (STD-002)
+- **Given** an item with standard 10, last bought at 12, and an active purchase price of 15
+- **When** the drift is calculated
+- **Then** source Purchase price list, proposal 15
+
+**Automation:** `MFG Cost Drift Tests.APriceListPriceReplacesTheLastPurchasePrice`
+
+## TEST-11 — The item's own vendor price wins
+- **Given** prices of 14 from the item's vendor and 11 from another
+- **When** the drift is calculated
+- **Then** proposal 14
+
+**Automation:** `MFG Cost Drift Tests.TheItemsOwnVendorPriceWins`
+
+## TEST-12 — Prices that do not apply today are ignored
+- **Given** prices starting tomorrow, in a foreign currency, and from a minimum quantity of 10; last bought at 12
+- **When** the drift is calculated
+- **Then** source Last purchase price, proposal 12
+
+**Automation:** `MFG Cost Drift Tests.PricesThatDoNotApplyTodayAreIgnored`
+
+## TEST-13 — A price per box is converted to the base unit
+- **Given** standard 5, a price of 100 per box of 10
+- **When** the drift is calculated
+- **Then** proposal 10
+
+**Automation:** `MFG Cost Drift Tests.APricePerBoxIsConvertedToTheBaseUnit`

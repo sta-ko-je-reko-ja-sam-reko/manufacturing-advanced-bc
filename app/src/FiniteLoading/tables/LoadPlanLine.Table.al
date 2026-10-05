@@ -1,5 +1,6 @@
 namespace ManufacturingAdvanced.FiniteLoading;
 
+using Microsoft.Manufacturing.Capacity;
 using Microsoft.Manufacturing.Document;
 using Microsoft.Manufacturing.WorkCenter;
 
@@ -133,6 +134,18 @@ table 85701 "MFG Load Plan Line"
             Caption = 'Previous operation no.';
             DataClassification = CustomerContent;
             ToolTip = 'Specifies the operations of the same routing that must be done first, as on the production order routing.';
+        }
+        field(43; "Capacity Type"; Enum "Capacity Type")
+        {
+            Caption = 'Capacity type';
+            DataClassification = CustomerContent;
+            ToolTip = 'Specifies whether the operation runs on the work center or on one of its machine centers.';
+        }
+        field(44; "Capacity No."; Code[20])
+        {
+            Caption = 'Capacity no.';
+            DataClassification = CustomerContent;
+            ToolTip = 'Specifies the work center or machine center whose calendar the operation is loaded on.';
         }
         field(40; "Written Back"; Boolean)
         {
