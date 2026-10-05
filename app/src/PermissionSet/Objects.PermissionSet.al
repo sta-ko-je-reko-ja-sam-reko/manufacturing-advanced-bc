@@ -1,6 +1,7 @@
 namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.CostDrift;
+using ManufacturingAdvanced.EngineeringChange;
 using ManufacturingAdvanced.PlanningInsight;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
@@ -157,5 +158,25 @@ permissionset 85000 "MFG Objects"
         codeunit "MFG Shop Floor Engine" = X,
         codeunit "MFG Shop Floor Journal Posting" = X,
         codeunit "MFG Shop Floor Locator" = X,
-        codeunit "MFG Demo Shop Floor" = X;
+        codeunit "MFG Demo Shop Floor" = X,
+        table "MFG ECO Setup" = X,
+        table "MFG ECO Header" = X,
+        table "MFG ECO Line" = X,
+        table "MFG ECO Impact" = X,
+        page "MFG ECO Setup" = X,
+        page "MFG ECO List" = X,
+        page "MFG ECO Card" = X,
+        page "MFG ECO Subform" = X,
+        page "MFG ECO Impact" = X,
+        page "MFG API ECO" = X,
+        page "MFG API ECO Line" = X,
+        page "MFG API Demo ECO" = X,
+        codeunit "MFG ECO Feature Setup" = X,
+        codeunit "MFG ECO App Area Sub." = X,
+        codeunit "MFG ECO Engine" = X,
+        codeunit "MFG ECO Header Logic" = X,
+        codeunit "MFG ECO No Object" = X,
+        codeunit "MFG ECO Production BOM" = X,
+        codeunit "MFG ECO Routing" = X,
+        codeunit "MFG Demo ECO" = X;
 }

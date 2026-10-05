@@ -1,6 +1,7 @@
 namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.CostDrift;
+using ManufacturingAdvanced.EngineeringChange;
 using ManufacturingAdvanced.PlanningInsight;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
@@ -46,5 +47,10 @@ enum 85000 "MFG Feature" implements "MFG IFeatureSetup"
     {
         Caption = 'Shop floor terminal';
         Implementation = "MFG IFeatureSetup" = "MFG Shop Floor Feature Setup";
+    }
+    value(7; MFGEngineeringChange)
+    {
+        Caption = 'Engineering change';
+        Implementation = "MFG IFeatureSetup" = "MFG ECO Feature Setup";
     }
 }
