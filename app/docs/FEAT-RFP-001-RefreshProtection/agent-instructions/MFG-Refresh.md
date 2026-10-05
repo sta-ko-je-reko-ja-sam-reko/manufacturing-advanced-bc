@@ -3,7 +3,8 @@ changes they had made by hand.
 
 Tools:
 - `refreshRuns` lists the refreshes that changed something: run number, order status and number, when and by whom,
-  the number of changes, and how many could still be restored.
+  the source (Refresh Production Order, or a recalculation of a line by planning or other code), the number of
+  changes, and how many could still be restored.
 - `refreshChanges` lists the changes of each run: kind (Component, Operation, Line), change type (Changed, Removed, Added),
   the subject (which component, operation or order line), the field, the value before and after the refresh, and whether it is
   restorable and already restored. Its bound action `restore` puts one change back: a changed value returns to its

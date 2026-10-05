@@ -77,6 +77,13 @@ page 85207 "MFG WIP Reconciliation"
                     CurrPage.Update(false);
                 end;
             }
+            action(History)
+            {
+                Caption = 'History';
+                ToolTip = 'See earlier reconciliations, order by order and day by day.';
+                Image = History;
+                RunObject = page "MFG WIP Recon. Entries";
+            }
             action(OpenProdOrder)
             {
                 Caption = 'Open production order';
@@ -105,6 +112,9 @@ page 85207 "MFG WIP Reconciliation"
                 {
                 }
                 actionref(OpenProdOrderRef; OpenProdOrder)
+                {
+                }
+                actionref(HistoryRef; History)
                 {
                 }
             }

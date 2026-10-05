@@ -29,6 +29,9 @@ The work center needs a calendar: run **Calculate Work Center Calendar** as usua
    finite starting date on the production order, and Business Central reschedules the rest of the order as if you
    had changed the date yourself. This needs **Allow applying the plan to orders** on **Finite loading setup**.
    Calculate again afterwards, because moving one operation also moves the ones after it.
+7. To see the whole shop at once, choose **Calculate all work centers**. Each operation then also waits for the
+   operations before it on its routing, wherever they are done, and **Earliest start date** shows the day it can
+   start. **Apply to orders** with no work center chosen applies the whole plan.
 
 ## Notes
 

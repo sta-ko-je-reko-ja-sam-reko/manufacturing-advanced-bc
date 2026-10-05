@@ -41,6 +41,13 @@ table 85200 "MFG WIP Setup"
             MinValue = 0;
             ToolTip = 'Specifies how many days back, from the work date, finished production orders are reconciled together with every released one.';
         }
+        field(50; "Keep History (Days)"; Integer)
+        {
+            Caption = 'Keep reconciliation history (days)';
+            DataClassification = CustomerContent;
+            MinValue = 0;
+            ToolTip = 'Specifies how many days of reconciliation history are kept. Older entries are removed when the reconciliation runs. 0 keeps everything.';
+        }
         field(30; "Update Unit Cost"; Boolean)
         {
             Caption = 'Update unit cost on finish';

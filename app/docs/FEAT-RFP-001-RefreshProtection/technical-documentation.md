@@ -1,6 +1,7 @@
 # FEAT-RFP-001 - Refresh Protection
 
-Segments: **RFP-001** components and operations; **RFP-002** production order lines.
+Segments: **RFP-001** components and operations; **RFP-002** production order lines; **RFP-003** recalculations
+outside the Refresh Production Order batch job.
 
 > **Source/legacy reference:** N/A (greenfield).
 > **Affected objects:** feature setup, refresh runs, component, operation and line snapshots, changes, object kinds
@@ -35,7 +36,16 @@ put it back.
      which also updates its components; a different production BOM, routing, either version or unit of measure, a
      removed line and an added line are reported only.
    A run with no changes is removed with its snapshot.
-4. With notifications on, the user sees *Refreshing production order … made n change(s)* with **Show changes**.
+4. **Recalculations elsewhere (RFP-003).** Anything that rebuilds an existing line from its BOM and routing through
+   `Calculate Prod. Order`.Calculate — planning, Create Prod. Order Lines on an existing order, a customization — is
+   recorded too, as a run with source *Recalculation of a line*: `OnBeforeCalculate` starts a run when the line
+   already has components (when components are recalculated) or operations (when the routing is), and
+   `OnAfterCalculate` completes it. Inside the batch job the job's own run covers the order, so no second run is
+   started; a new line has nothing to protect and starts none. These runs send no notification, because such
+   recalculations often come in batches; they are listed with the order's refresh changes like any other run.
+   `Recalculate` (dates and expected quantities after a manual edit of a line) keeps manual values and is not
+   recorded.
+5. With notifications on, the user sees *Refreshing production order … made n change(s)* with **Show changes**.
 5. On **Refresh changes**, the user selects lines and chooses **Restore**. A changed value is validated back to the
    value before the refresh; a removed component is re-created from the snapshot through the component's own
    validation; an added component is deleted. Each restored change is marked *Restored* and cannot be restored twice.
@@ -48,7 +58,7 @@ put it back.
 | Table | ID | Key | Content |
 |---|---|---|---|
 | MFG Refresh Setup | 85400 | Primary Key | `MFG Enabled`, `Notify on Changes` |
-| MFG Refresh Run | 85401 | Run No. (AutoIncrement) | Order status and number, refreshed at and by (`EndUserIdentifiableInformation`), Completed; FlowFields Changes and Open Changes |
+| MFG Refresh Run | 85401 | Run No. (AutoIncrement) | Order status and number, refreshed at and by (`EndUserIdentifiableInformation`), Completed, Source (RFP-003); FlowFields Changes and Open Changes |
 | MFG Refresh Comp. Snapshot | 85402 | Run No., Entry No. | Order line, occurrence, component line, and the compared fields **under the same field numbers as `Prod. Order Component`** (11, 12, 13, 19, 20, 21, 28, 30, 33, 45) |
 | MFG Refresh Oper. Snapshot | 85403 | Run No., Entry No. | Routing, routing reference, operation, and the compared fields **under the same field numbers as `Prod. Order Routing Line`** (7, 8, 11, 12, 13, 34) |
 | MFG Refresh Line Snapshot | 85405 | Run No., Entry No. | Original line number, occurrence, and the compared fields under the same field numbers as `Prod. Order Line` (11, 12, 13, 20, 23, 40, 47, 60, 61, 80), except the version codes, stored in 85750 and 85751 because 99000750 and 99000751 lie outside the app's ID range and mapped back in `MFG Refresh Lines` |
@@ -69,6 +79,7 @@ Because the snapshot fields share the standard field numbers, comparison and res
 |---|---|---|---|
 | Enum | 85400 | MFG Refresh Object Kind | Extensible; implements `MFG IRefreshObject`; default `MFG Refresh No Object` |
 | Enum | 85401 | MFG Refresh Change Type | Changed, Removed, Added |
+| Enum | 85402 | MFG Refresh Source | Refresh Production Order, Recalculation of a line (RFP-003) |
 | Interface | — | MFG IRefreshObject | TakeSnapshot, Compare, Restore, DeleteSnapshot |
 | Interface | — | MFG IRefreshReactions | OnBeforeRefresh, OnAfterRefresh |
 | Codeunit | 85400 | MFG Refresh Feature Setup | `MFG IFeatureSetup` |
@@ -114,6 +125,8 @@ app/src/RefreshGuard/
 |---|---|---|
 | Before refresh | Report `Refresh Production Order`.`OnBeforeCalcProdOrder` | Proxy → locator → reactions → `BeginRun`. Fires before any line is deleted |
 | After refresh | Report `Refresh Production Order`.`OnAfterRefreshProdOrder` | Proxy → locator → reactions → `CompleteRun` and the notification |
+| Before a line calculation | Codeunit `Calculate Prod. Order`.`OnBeforeCalculate` | Proxy → reactions `OnBeforeCalculateLine` → `BeginRun` with source *Recalculation of a line*, unless the batch job's run is open or the line has nothing yet (RFP-003) |
+| After a line calculation | Codeunit `Calculate Prod. Order`.`OnAfterCalculate` | Proxy → reactions `OnAfterCalculateLine` → `CompleteRun` |
 | Application areas | `Application Area Mgmt. Facade`.`OnGetEssentialExperienceAppAreas` | `MFG Refresh Guard` from the enabled flag |
 
 Both subscribers set `SkipOnMissingLicense` and `SkipOnMissingPermission`. Every reaction's first line is the
@@ -154,8 +167,10 @@ Sample data only, through `MFG Demo Refresh`.Import:
 
 ## Known Limitations
 
-- Only refreshes through the *Refresh Production Order* report are recorded. Code that calls `Create Prod. Order
-  Lines` or `Calculate Prod. Order` directly is not.
+- Recalculations are recorded where they go through `Calculate Prod. Order`.Calculate. Code that deletes and inserts
+  components or routing lines itself, without it, is not.
+- `Recalculate`, which Business Central runs when a line's dates or quantity are edited, is not recorded: it keeps
+  manual values and only moves dates and expected quantities.
 - A removed or added production order line is reported only. Re-creating a line needs its components and routing
   calculated again, which is a refresh of its own.
 - The refresh is not refused; the app only records and restores. Refusing is a reactions implementation away.

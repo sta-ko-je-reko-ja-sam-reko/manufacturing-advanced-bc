@@ -87,6 +87,14 @@ page 85702 "MFG API Load Plan Line"
                 {
                     Caption = 'Days late';
                 }
+                field(previousOperationNo; Rec."Previous Operation No.")
+                {
+                    Caption = 'Previous operation no.';
+                }
+                field(earliestStartDate; Rec."Earliest Start Date")
+                {
+                    Caption = 'Earliest start date';
+                }
                 field(writtenBack; Rec."Written Back")
                 {
                     Caption = 'Applied to order';

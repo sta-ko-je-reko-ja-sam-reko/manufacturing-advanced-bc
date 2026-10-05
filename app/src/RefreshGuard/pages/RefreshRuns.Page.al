@@ -31,6 +31,9 @@ page 85401 "MFG Refresh Runs"
                 field("Refreshed By"; Rec."Refreshed By")
                 {
                 }
+                field(Source; Rec.Source)
+                {
+                }
                 field(Changes; Rec.Changes)
                 {
                 }

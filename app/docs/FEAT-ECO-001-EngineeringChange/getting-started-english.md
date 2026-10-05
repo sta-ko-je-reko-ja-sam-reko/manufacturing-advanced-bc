@@ -40,6 +40,9 @@ Choose **Impact** to see the open production orders that use the BOMs and routin
    approved what.
 3. Choose **Implement**. The new versions are certified from the effective date. Production orders refreshed from then
    on use them.
+4. Choose **Refresh impacted orders** to refresh, in one go, the open orders that use the changed BOMs and routings
+   and are due on or after the effective date. Released orders where something was already posted are left alone. If
+   refresh protection is on, you can restore anything the refresh replaced.
 
 ## Notes
 

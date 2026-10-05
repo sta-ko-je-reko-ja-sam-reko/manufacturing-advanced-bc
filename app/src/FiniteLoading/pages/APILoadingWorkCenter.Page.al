@@ -72,6 +72,24 @@ page 85703 "MFG API Loading Work Center"
     end;
 
     /// <summary>
+    /// Builds the finite load plan of every work center at once, respecting the order of each routing's operations.
+    /// Whichever work center it is called on, all are calculated. Changes no production order.
+    /// </summary>
+    /// <param name="ActionContext">The OData action context.</param>
+    [ServiceEnabled]
+    procedure CalculateAllLoads(var ActionContext: WebServiceActionContext)
+    var
+        Engine: Codeunit "MFG Loading Engine";
+    begin
+        Engine.CalculateAll();
+
+        ActionContext.SetObjectType(ObjectType::Page);
+        ActionContext.SetObjectId(Page::"MFG API Loading Work Center");
+        ActionContext.AddEntityKey(Rec.FieldNo(SystemId), Rec.SystemId);
+        ActionContext.SetResultCode(WebServiceActionResultCode::Get);
+    end;
+
+    /// <summary>
     /// Applies this work center's calculated load plan to the production orders: every operation that fits the
     /// horizon is moved to its planned starting date. Refused unless the setup allows it.
     /// </summary>

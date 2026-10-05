@@ -40,3 +40,11 @@ Integration test plan. Automated in `MFG WIP Integration` (codeunit 89005) with 
 - **Then** the order is first *Not posted to G/L yet*, then *Matched*
 
 **Automation:** manual, on `bc29loc`
+
+## TEST-06 — The daily run on the job queue (WIP-003)
+- **Given** the feature enabled
+- **When** the administrator chooses **Schedule daily run** on the setup, and the job queue entry is run once by hand
+- **Then** a recurring entry for *MFG WIP Scheduled Run* exists, and the run refreshes the proposals, the
+  reconciliation and adds history entries
+
+**Automation:** manual, on `bc29loc`

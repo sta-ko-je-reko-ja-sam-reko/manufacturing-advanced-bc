@@ -37,3 +37,10 @@ Integration test plan. Automated in `MFG Refresh Integration` (codeunit 89008) w
 - **Then** the change is restored; a change that is not restorable, already restored, or with the feature off, is refused
 
 **Automation:** manual, on `bc29loc`
+
+## TEST-06 — A recalculation outside the batch job is recorded (RFP-003)
+- **Given** refresh protection on, and a refreshed order whose component quantity per was set to 5 by hand
+- **When** the line is recalculated directly with `Calculate Prod. Order`.Calculate
+- **Then** the quantity per is 1 again, and a run with source *Recalculation of a line* recorded the change
+
+**Automation:** `MFG Refresh Integration.ARecalculationOutsideTheBatchJobIsRecorded`

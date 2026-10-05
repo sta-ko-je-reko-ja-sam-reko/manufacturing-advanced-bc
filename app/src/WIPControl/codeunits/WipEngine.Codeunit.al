@@ -1,5 +1,6 @@
 namespace ManufacturingAdvanced.WIPControl;
 
+using ManufacturingAdvanced.Core;
 using Microsoft.Manufacturing.Document;
 
 codeunit 85202 "MFG WIP Engine"
@@ -167,6 +168,7 @@ codeunit 85202 "MFG WIP Engine"
         if not Setup.Get() then
             Clear(Setup);
 
+        DeleteOldHistory(Setup."Keep History (Days)");
         Reconciliation.DeleteAll();
         ProductionOrder.SetRange(Status, ProductionOrder.Status::Released);
         if ProductionOrder.FindSet() then
@@ -215,6 +217,21 @@ codeunit 85202 "MFG WIP Engine"
         Reconciliation.Status := ReconciliationStatus(Reconciliation, Setup."Reconciliation Tolerance");
         Reconciliation."Reconciled At" := CurrentDateTime();
         Reconciliation.Insert(true);
+        AddHistory(Reconciliation);
+    end;
+
+    /// <summary>
+    /// The daily job: suggests the finish proposals and reconciles WIP with the general ledger, while the feature is
+    /// enabled. Does nothing when it is not.
+    /// </summary>
+    procedure RunScheduled()
+    var
+        FeatureMgt: Codeunit "MFG Feature Mgt.";
+    begin
+        if not FeatureMgt.IsEnabled(Enum::"MFG Feature"::MFGWipControl) then
+            exit;
+        Suggest();
+        Reconcile();
     end;
 
     /// <summary>
@@ -239,6 +256,35 @@ codeunit 85202 "MFG WIP Engine"
                 FinishCheckRow.Insert(true);
             end;
         end;
+    end;
+
+    local procedure AddHistory(Reconciliation: Record "MFG WIP Reconciliation")
+    var
+        ReconEntry: Record "MFG WIP Recon. Entry";
+    begin
+        ReconEntry.Init();
+        ReconEntry."Reconciled On" := WorkDate();
+        ReconEntry."Prod. Order Status" := Reconciliation."Prod. Order Status";
+        ReconEntry."Prod. Order No." := Reconciliation."Prod. Order No.";
+        ReconEntry."Source No." := Reconciliation."Source No.";
+        ReconEntry."Value WIP" := Reconciliation."Value WIP";
+        ReconEntry."G/L WIP" := Reconciliation."G/L WIP";
+        ReconEntry.Difference := Reconciliation.Difference;
+        ReconEntry."Unposted Cost" := Reconciliation."Unposted Cost";
+        ReconEntry.Status := Reconciliation.Status;
+        ReconEntry."Reconciled At" := Reconciliation."Reconciled At";
+        ReconEntry.Insert(true);
+    end;
+
+    local procedure DeleteOldHistory(KeepDays: Integer)
+    var
+        ReconEntry: Record "MFG WIP Recon. Entry";
+    begin
+        if KeepDays <= 0 then
+            exit;
+        ReconEntry.SetCurrentKey("Reconciled On");
+        ReconEntry.SetFilter("Reconciled On", '<%1', WorkDate() - KeepDays);
+        ReconEntry.DeleteAll();
     end;
 
     local procedure ReconciliationStatus(Reconciliation: Record "MFG WIP Reconciliation"; Tolerance: Decimal): Enum "MFG WIP Recon. Status"
