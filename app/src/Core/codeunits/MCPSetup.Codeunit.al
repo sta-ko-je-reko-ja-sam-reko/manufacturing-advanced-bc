@@ -48,7 +48,8 @@ codeunit 85006 "MFG MCP Setup"
 
     /// <summary>
     /// Adds an API page to a configuration as a tool and sets what the agent may do with it. Reading is
-    /// always allowed; the write verbs are per tool.
+    /// always allowed; the write verbs are per tool. A tool that writes needs the configuration to allow create,
+    /// update and delete tools, so that is switched on for it first.
     /// </summary>
     /// <param name="ConfigId">The configuration to add the tool to.</param>
     /// <param name="ApiPageId">The API page exposed as the tool.</param>
@@ -64,6 +65,10 @@ codeunit 85006 "MFG MCP Setup"
         if IsNullGuid(ToolId) then
             exit;
         MCPConfig.AllowRead(ToolId, true);
+        if not (AllowCreate or AllowModify or AllowDelete) then
+            exit;
+
+        MCPConfig.AllowCreateUpdateDeleteTools(ConfigId, true);
         MCPConfig.AllowCreate(ToolId, AllowCreate);
         MCPConfig.AllowModify(ToolId, AllowModify);
         MCPConfig.AllowDelete(ToolId, AllowDelete);

@@ -2,6 +2,7 @@ namespace ManufacturingAdvanced.Test;
 
 using ManufacturingAdvanced.Core;
 using ManufacturingAdvanced.RefreshGuard;
+using Microsoft.Inventory.Item;
 using Microsoft.Manufacturing.Capacity;
 using Microsoft.Manufacturing.Document;
 using System.IO;
@@ -273,8 +274,10 @@ codeunit 89007 "MFG Refresh Tests"
         Engine: Codeunit "MFG Refresh Engine";
         RunNo: Integer;
     begin
-        // [GIVEN] The feature is on, and a component the refresh added
+        // [GIVEN] The feature is on, and a component the refresh added; deleting it runs the reservation check, which
+        // needs the item
         SetFeature(true);
+        CreateItem('MFGR-C');
         CreateOrder(ProductionOrder, 'MFGR-010');
         RunNo := Engine.BeginRun(ProductionOrder);
         AddComponent(ProductionOrder, 10000, 'MFGR-C', 3);
@@ -517,6 +520,17 @@ codeunit 89007 "MFG Refresh Tests"
         ProdOrderLine.Get(ProductionOrder.Status, ProductionOrder."No.", LineNo);
         ProdOrderLine.Quantity := NewQuantity;
         ProdOrderLine.Modify(false);
+    end;
+
+    local procedure CreateItem(ItemNo: Code[20])
+    var
+        Item: Record Item;
+    begin
+        if Item.Get(ItemNo) then
+            exit;
+        Item.Init();
+        Item."No." := ItemNo;
+        Item.Insert(false);
     end;
 
     local procedure SetFeature(Enabled: Boolean)
