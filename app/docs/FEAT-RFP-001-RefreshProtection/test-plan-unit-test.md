@@ -112,3 +112,24 @@ keys; the refresh is simulated between `BeginRun` and `CompleteRun`.
 - **Then** one Removed line change, not restorable
 
 **Automation:** `MFG Refresh Tests.ARemovedLineIsReportedOnly`
+
+## TEST-17 — A line recalculation outside the batch job is recorded (RFP-003)
+- **Given** the feature on and a line with a component
+- **When** the line events of a recalculation surround a change of its quantity per
+- **Then** one run with source *Recalculation of a line* and one change
+
+**Automation:** `MFG Refresh Tests.ALineRecalculationOutsideTheBatchJobIsRecorded`
+
+## TEST-18 — A new line starts no run
+- **Given** the feature on and a line without components or operations
+- **When** it is calculated for the first time
+- **Then** no run
+
+**Automation:** `MFG Refresh Tests.ANewLineStartsNoRun`
+
+## TEST-19 — A line recalculated by the batch job is left to its run
+- **Given** the feature on and a line with a component
+- **When** Refresh Production Order runs, and the line events fire inside it
+- **Then** only the batch job's run, with the change once
+
+**Automation:** `MFG Refresh Tests.ALineRecalculatedByTheBatchJobIsLeftToItsRun`

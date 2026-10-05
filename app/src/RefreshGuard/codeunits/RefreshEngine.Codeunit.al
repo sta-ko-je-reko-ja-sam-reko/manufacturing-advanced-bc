@@ -18,12 +18,24 @@ codeunit 85402 "MFG Refresh Engine"
     /// <param name="ProductionOrder">The order about to be refreshed.</param>
     /// <returns>The number of the run.</returns>
     procedure BeginRun(ProductionOrder: Record "Production Order"): Integer
+    begin
+        exit(BeginRun(ProductionOrder, Enum::"MFG Refresh Source"::MFGRefreshReport));
+    end;
+
+    /// <summary>
+    /// Starts a refresh run for a production order, recording what recalculates it.
+    /// </summary>
+    /// <param name="ProductionOrder">The order about to be recalculated.</param>
+    /// <param name="Source">What recalculates it.</param>
+    /// <returns>The number of the run.</returns>
+    procedure BeginRun(ProductionOrder: Record "Production Order"; Source: Enum "MFG Refresh Source"): Integer
     var
         RefreshRun: Record "MFG Refresh Run";
         RefreshObject: Interface "MFG IRefreshObject";
         Ordinal: Integer;
     begin
         RefreshRun.Init();
+        RefreshRun.Source := Source;
         RefreshRun."Prod. Order Status" := ProductionOrder.Status;
         RefreshRun."Prod. Order No." := ProductionOrder."No.";
         RefreshRun."Refreshed At" := CurrentDateTime();

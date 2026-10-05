@@ -46,6 +46,13 @@ Re-enter those on the order yourself if you need to.
 On a firm planned or released production order, choose **Refresh changes** to see every refresh of that order that
 changed something. You can also search for **Production order refreshes**.
 
+### Recalculations from elsewhere
+
+Orders are not only refreshed with **Refresh Production Order**. Planning, customizations and other batch jobs can
+rebuild a line's components and routing too. Those recalculations are recorded in the same way, with the source
+*Recalculation of a line*, and you restore their changes in the same way. They show no notification; look for them
+under **Refresh changes** on the order.
+
 ## Notes
 
 - Only refreshes made with **Refresh Production Order** are recorded.

@@ -49,6 +49,12 @@ table 85401 "MFG Refresh Run"
             DataClassification = SystemMetadata;
             ToolTip = 'Specifies whether the refresh finished and was compared with the snapshot.';
         }
+        field(23; Source; Enum "MFG Refresh Source")
+        {
+            Caption = 'Source';
+            DataClassification = SystemMetadata;
+            ToolTip = 'Specifies what recalculated the order: the Refresh Production Order batch job, or a recalculation of one line from anywhere else, such as planning or a customization.';
+        }
         field(30; Changes; Integer)
         {
             Caption = 'Changes';

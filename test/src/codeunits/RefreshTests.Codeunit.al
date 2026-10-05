@@ -429,6 +429,93 @@ codeunit 89007 "MFG Refresh Tests"
     end;
 
     [Test]
+    procedure ALineRecalculationOutsideTheBatchJobIsRecorded()
+    var
+        ProductionOrder: Record "Production Order";
+        RefreshRun: Record "MFG Refresh Run";
+        ProdOrderLine: Record "Prod. Order Line";
+        ProdOrderComponent: Record "Prod. Order Component";
+        Reactions: Codeunit "MFG Refresh Reactions";
+    begin
+        // [GIVEN] The feature is on, and an order line with a component
+        SetFeature(true);
+        CreateOrder(ProductionOrder, 'MFGR-030');
+        AddComponent(ProductionOrder, 10000, 'MFGR-A', 1);
+        ProdOrderLine.Get(ProductionOrder.Status, ProductionOrder."No.", 10000);
+
+        // [WHEN] Something other than the batch job recalculates the line's components and changes the quantity per
+        Reactions.OnBeforeCalculateLine(ProdOrderLine, false, true);
+        ProdOrderComponent.Get(ProductionOrder.Status, ProductionOrder."No.", 10000, 10000);
+        ProdOrderComponent."Quantity per" := 4;
+        ProdOrderComponent.Modify(false);
+        Reactions.OnAfterCalculateLine(ProdOrderLine);
+
+        // [THEN] One run from a line recalculation, with the change
+        RefreshRun.SetRange("Prod. Order No.", ProductionOrder."No.");
+        Assert.RecordCount(RefreshRun, 1);
+        RefreshRun.FindFirst();
+        Assert.AreEqual(RefreshRun.Source::MFGCalculation, RefreshRun.Source, 'The run says what recalculated the order.');
+        RefreshRun.CalcFields(Changes);
+        Assert.AreEqual(1, RefreshRun.Changes, 'The changed quantity per is recorded.');
+    end;
+
+    [Test]
+    procedure ANewLineStartsNoRun()
+    var
+        ProductionOrder: Record "Production Order";
+        RefreshRun: Record "MFG Refresh Run";
+        ProdOrderLine: Record "Prod. Order Line";
+        Reactions: Codeunit "MFG Refresh Reactions";
+    begin
+        // [GIVEN] The feature is on, and an order line without components or operations yet
+        SetFeature(true);
+        CreateOrder(ProductionOrder, 'MFGR-031');
+        ProdOrderLine.Get(ProductionOrder.Status, ProductionOrder."No.", 10000);
+
+        // [WHEN] Its routing and components are calculated for the first time
+        Reactions.OnBeforeCalculateLine(ProdOrderLine, true, true);
+        AddComponent(ProductionOrder, 10000, 'MFGR-A', 1);
+        Reactions.OnAfterCalculateLine(ProdOrderLine);
+
+        // [THEN] Nothing is recorded: there was nothing to protect
+        RefreshRun.SetRange("Prod. Order No.", ProductionOrder."No.");
+        Assert.RecordIsEmpty(RefreshRun);
+    end;
+
+    [Test]
+    procedure ALineRecalculatedByTheBatchJobIsLeftToItsRun()
+    var
+        ProductionOrder: Record "Production Order";
+        RefreshRun: Record "MFG Refresh Run";
+        ProdOrderLine: Record "Prod. Order Line";
+        ProdOrderComponent: Record "Prod. Order Component";
+        Reactions: Codeunit "MFG Refresh Reactions";
+    begin
+        // [GIVEN] The feature is on, and an order line with a component
+        SetFeature(true);
+        CreateOrder(ProductionOrder, 'MFGR-032');
+        AddComponent(ProductionOrder, 10000, 'MFGR-A', 1);
+        ProdOrderLine.Get(ProductionOrder.Status, ProductionOrder."No.", 10000);
+
+        // [WHEN] Refresh Production Order recalculates the line, which raises the line events inside its own run
+        Reactions.OnBeforeRefresh(ProductionOrder);
+        Reactions.OnBeforeCalculateLine(ProdOrderLine, false, true);
+        ProdOrderComponent.Get(ProductionOrder.Status, ProductionOrder."No.", 10000, 10000);
+        ProdOrderComponent."Quantity per" := 6;
+        ProdOrderComponent.Modify(false);
+        Reactions.OnAfterCalculateLine(ProdOrderLine);
+        Reactions.OnAfterRefresh(ProductionOrder);
+
+        // [THEN] Only the batch job's run exists, with the change
+        RefreshRun.SetRange("Prod. Order No.", ProductionOrder."No.");
+        Assert.RecordCount(RefreshRun, 1);
+        RefreshRun.FindFirst();
+        Assert.AreEqual(RefreshRun.Source::MFGRefreshReport, RefreshRun.Source, 'The batch job owns the run.');
+        RefreshRun.CalcFields(Changes);
+        Assert.AreEqual(1, RefreshRun.Changes, 'The change is recorded once.');
+    end;
+
+    [Test]
     procedure TheFeatureRegistersAGuidedSetupStep()
     var
         TempSetupStep: Record "MFG Setup Step" temporary;

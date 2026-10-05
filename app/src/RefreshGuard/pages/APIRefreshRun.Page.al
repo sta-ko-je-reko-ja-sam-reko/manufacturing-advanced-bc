@@ -47,6 +47,10 @@ page 85403 "MFG API Refresh Run"
                 {
                     Caption = 'Refreshed by';
                 }
+                field(source; Rec.Source)
+                {
+                    Caption = 'Source';
+                }
                 field(changes; Rec.Changes)
                 {
                     Caption = 'Changes';

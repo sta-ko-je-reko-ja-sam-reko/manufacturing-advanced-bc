@@ -106,6 +106,41 @@ codeunit 89008 "MFG Refresh Integration"
         Assert.RecordIsEmpty(RefreshRun);
     end;
 
+    [Test]
+    procedure ARecalculationOutsideTheBatchJobIsRecorded()
+    var
+        ProductionOrder: Record "Production Order";
+        ProdOrderLine: Record "Prod. Order Line";
+        ProdOrderComponent: Record "Prod. Order Component";
+        RefreshRun: Record "MFG Refresh Run";
+        Change: Record "MFG Refresh Change";
+        CalculateProdOrder: Codeunit "Calculate Prod. Order";
+    begin
+        // [GIVEN] Refresh protection is on, and a refreshed order whose component quantity per was changed to 5 by hand
+        SetFeature(true);
+        CreateRefreshedOrder(ProductionOrder);
+        FindComponent(ProductionOrder, ProdOrderComponent);
+        ProdOrderComponent.Validate("Quantity per", 5);
+        ProdOrderComponent.Modify(true);
+
+        // [WHEN] The line is recalculated from its BOM directly, as planning or a customization would
+        ProdOrderLine.SetRange(Status, ProductionOrder.Status);
+        ProdOrderLine.SetRange("Prod. Order No.", ProductionOrder."No.");
+        ProdOrderLine.FindFirst();
+        CalculateProdOrder.Calculate(ProdOrderLine, 1, true, true, true, false);
+
+        // [THEN] The quantity per is back to the BOM's, and a run from a line recalculation recorded the change
+        FindComponent(ProductionOrder, ProdOrderComponent);
+        Assert.AreEqual(1, ProdOrderComponent."Quantity per", 'The recalculation takes the quantity per from the BOM.');
+        RefreshRun.SetRange("Prod. Order No.", ProductionOrder."No.");
+        RefreshRun.SetRange(Source, RefreshRun.Source::MFGCalculation);
+        Assert.RecordCount(RefreshRun, 1);
+        RefreshRun.FindFirst();
+        Change.SetRange("Run No.", RefreshRun."Run No.");
+        Change.SetRange("Field No.", ProdOrderComponent.FieldNo("Quantity per"));
+        Assert.RecordCount(Change, 1);
+    end;
+
     local procedure CreateRefreshedOrder(var ProductionOrder: Record "Production Order")
     var
         ComponentItem: Record Item;
