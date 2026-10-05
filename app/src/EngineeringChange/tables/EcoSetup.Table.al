@@ -27,6 +27,12 @@ table 85800 "MFG ECO Setup"
             TableRelation = "No. Series";
             ToolTip = 'Specifies the number series that numbers engineering change orders.';
         }
+        field(40; "Approval Method"; Enum "MFG ECO Approval Method")
+        {
+            Caption = 'Approval method';
+            DataClassification = CustomerContent;
+            ToolTip = 'Specifies how engineering changes are approved: on the change card, or through a Business Central approval workflow created from the Engineering change approval workflow template.';
+        }
         field(30; "Separate Approver"; Boolean)
         {
             Caption = 'Approver must differ from requester';

@@ -1,5 +1,8 @@
 # FEAT-WIP-001 - WIP Control
 
+Segments: **WIP-001** proposals, checks and finishing; **WIP-002** reconciliation of each order's WIP with the
+G/L WIP accounts.
+
 > **Source/legacy reference:** N/A (greenfield).
 > **Affected objects:** feature setup, finish checks, finish proposals, WIP valuation behind an interface,
 > engine, finish proposal worksheet, action on the released production order list, API pages, MCP
@@ -36,6 +39,17 @@ orders and finishes them safely.
    becomes **Failed** with the error in its notes.
 5. Agents use the `mfgWip` API group: they read proposals, change a check's severity, and call
    `evaluateFinish` or `finishOrder` on a released production order.
+6. **WIP reconciliation (WIP-002).** **Reconcile** on the *WIP reconciliation* page (also opened from *Finish
+   proposals*) compares, for every released order and every order finished within *Reconciliation days* of the
+   work date (default 30):
+   - **WIP in value entries**: the valuation used for the proposals (consumption + capacity − output);
+   - **WIP in G/L**: the G/L entries on the WIP accounts of the inventory posting setup that were posted from the
+     order's value entries, followed through `G/L - Item Ledger Relation`;
+   - **Cost not posted to G/L**: the order's actual cost minus *Cost Posted to G/L* on its value entries.
+
+   A difference within *Reconciliation tolerance* (default 1) is **Matched**; a larger one with more than the
+   tolerance not yet posted to G/L is **Not posted to G/L yet** (run *Post Inventory Cost to G/L*); any other is
+   **Investigate**. Agents read `wipReconciliations` and call `reconcileWip` on one order.
 
 ## Data Model
 
@@ -49,6 +63,8 @@ orders and finishes them safely.
 | 10 | MFG Enabled | Boolean | The feature switch; drives the `MFGWIPControl` application area |
 | 20 | Min. Days Since Output | Integer | Days since the last output before an order is proposed. Default 0 |
 | 30 | Update Unit Cost | Boolean | Passed to the standard status change. Default off |
+| 40 | Reconciliation Tolerance | Decimal | Largest difference still matched. Default 1 |
+| 41 | Reconciliation Days | Integer | Finished orders reconciled this many days back from the work date. Default 30 |
 
 `MFG Finish Check` (85201): Check (enum, primary key), Severity (Off, Inform, Block), Description.
 
@@ -65,6 +81,20 @@ orders and finishes them safely.
 | 41 | Notes | Text[250] | Check findings joined with ` \| `, or the finish error |
 | 42 | Selected | Boolean | Finished by *Finish selected* |
 | 50 | Suggested At | DateTime | |
+
+`MFG WIP Reconciliation` (85203), rebuilt by **Reconcile**:
+
+| # | Field | Type | Notes |
+|---|---|---|---|
+| 1 | Prod. Order Status | Enum `Production Order Status` | Primary key; Released or Finished |
+| 2 | Prod. Order No. | Code[20] | Primary key |
+| 10–11 | Source No., Description | | From the order |
+| 20 | Value WIP | Decimal | From the valuation |
+| 21 | G/L WIP | Decimal | From the G/L source |
+| 22 | Difference | Decimal | Value WIP − G/L WIP |
+| 23 | Unposted Cost | Decimal | Actual cost not posted to G/L |
+| 30 | Status | Enum `MFG WIP Recon. Status` | Matched, Not posted to G/L yet, Investigate |
+| 40 | Reconciled At | DateTime | |
 
 ### New Fields on Existing Tables
 
@@ -83,26 +113,32 @@ orders and finishes them safely.
 | Enum | 85200 | MFG Finish Check Type | Extensible; implements `MFG IFinishCheck`; default `MFG Finish No Check` |
 | Enum | 85201 | MFG Finish Check Severity | Off, Inform, Block |
 | Enum | 85202 | MFG Finish Proposal Status | Ready, Blocked, Finished, Failed |
+| Table | 85203 | MFG WIP Reconciliation | Reconciliation per order (WIP-002) |
+| Enum | 85203 | MFG WIP Recon. Status | Matched, Not posted to G/L yet, Investigate |
+| Interface | — | MFG IGLWipSource | GLWipAmount(order), UnpostedCost(order) |
 | Interface | — | MFG IFinishCheck | Evaluate(order, var reason), DefaultSeverity, Description |
 | Interface | — | MFG IWipValuation | Calculate(order, var proposal) |
 | Codeunit | 85200 | MFG WIP Feature Setup | `MFG IFeatureSetup` |
 | Codeunit | 85201 | MFG WIP App Area Sub. | Application area from the enabled flag |
-| Codeunit | 85202 | MFG WIP Engine | Suggest, EvaluateOrder, FinishSelected, FinishOrder, IsOutputComplete, EnsureChecks |
+| Codeunit | 85202 | MFG WIP Engine | Suggest, EvaluateOrder, FinishSelected, FinishOrder, IsOutputComplete, EnsureChecks, Reconcile, ReconcileOrder |
 | Codeunit | 85203 | MFG WIP Finish Order | Runs the standard status change for one order; isolated so `Codeunit.Run` can catch its error |
 | Codeunit | 85204 | MFG WIP Value Entries | Default `MFG IWipValuation` |
 | Codeunit | 85205 | MFG Demo WIP | Sample data and configuration package |
 | Codeunit | 85206 | MFG Finish No Check | Default check: finds nothing, severity Off |
-| Codeunit | 85207 | MFG WIP Locator | Single-instance resolver of the valuation, with `Implement()` and `ResetValuation()` |
+| Codeunit | 85207 | MFG WIP Locator | Single-instance resolver of the valuation (`Implement()`, `ResetValuation()`) and of the G/L source (`GLSource()`, `ImplementGLSource()`, `ResetGLSource()`) |
 | Codeunit | 85210 | MFG Check Missing Consumption | Check 1 |
 | Codeunit | 85211 | MFG Check Open Whse. Activity | Check 2 |
 | Codeunit | 85212 | MFG Check Unfinished Ops. | Check 3 |
+| Codeunit | 85213 | MFG WIP GL Source | Default `MFG IGLWipSource` |
 | Page | 85200 | MFG WIP Setup | Setup card (`ApplicationArea = All`) with the checks part |
 | Page | 85201 | MFG Finish Checks | ListPart |
-| Page | 85202 | MFG Finish Proposals | Worksheet: Suggest, Select all ready, Finish selected, Open production order |
+| Page | 85202 | MFG Finish Proposals | Worksheet: Suggest, Select all ready, Finish selected, WIP reconciliation, Open production order |
 | Page | 85203 | MFG API Finish Proposal | API `finishProposals`, read-only |
 | Page | 85204 | MFG API Finish Check | API `finishChecks`, severity writable, guarded by `CheckEnabled` |
-| Page | 85205 | MFG API WIP Order | API `wipOrders` over released orders; bound actions `evaluateFinish`, `finishOrder` |
+| Page | 85205 | MFG API WIP Order | API `wipOrders` over released orders; bound actions `evaluateFinish`, `finishOrder`, `reconcileWip` |
 | Page | 85206 | MFG API Demo WIP | API group `demoWip`, bound action `importDemoData` |
+| Page | 85207 | MFG WIP Reconciliation | List: Reconcile, Open production order |
+| Page | 85208 | MFG API WIP Reconciliation | API `wipReconciliations`, read-only |
 | Page extension | 85200 | MFG Released Prod. Orders | *Finish proposals* on the released production order list |
 
 ## Files
@@ -111,14 +147,14 @@ orders and finishes them safely.
 app/src/WIPControl/
 ├── codeunits/      CheckMissingConsumption, CheckOpenWhseActivity, CheckUnfinishedOps, DemoWip,
 │                   FinishNoCheck, WipAppAreaSub, WipEngine, WipFeatureSetup, WipFinishOrder,
-│                   WipLocator, WipValueEntries
-├── enums/          FinishCheckSeverity, FinishCheckType, FinishProposalStatus
-├── interfaces/     IFinishCheck, IWipValuation
+│                   WipGLSource, WipLocator, WipValueEntries
+├── enums/          FinishCheckSeverity, FinishCheckType, FinishProposalStatus, WipReconStatus
+├── interfaces/     IFinishCheck, IGLWipSource, IWipValuation
 ├── pageextensions/ ReleasedProdOrders
-├── pages/          APIDemoWip, APIFinishCheck, APIFinishProposal, APIWipOrder, FinishChecks,
-│                   FinishProposals, WipSetup
+├── pages/          APIDemoWip, APIFinishCheck, APIFinishProposal, APIWipOrder, APIWipReconciliation,
+│                   FinishChecks, FinishProposals, WipReconciliation, WipSetup
 ├── tableextensions/WipApplArea
-└── tables/         FinishCheck, FinishProposal, WipSetup
+└── tables/         FinishCheck, FinishProposal, WipReconciliation, WipSetup
 ```
 
 ## Integration Points
@@ -128,6 +164,7 @@ app/src/WIPControl/
 | Finishing | `Prod. Order Status Management`.ChangeProdOrderStatus | The only way an order is finished; standard posting and checks apply |
 | WIP | `Value Entry` filtered on order type *Production* and the order number | Consumption, capacity (item ledger entry type blank) and output cost |
 | Picks | `Warehouse Activity Line`, source type `Prod. Order Component` | Open pick check |
+| G/L WIP | `Inventory Posting Setup`.`WIP Account`, `G/L - Item Ledger Relation`, `G/L Entry` | WIP in G/L per order |
 | Application areas | `Application Area Mgmt. Facade`.`OnGetEssentialExperienceAppAreas` | `MFG WIP Control` from the enabled flag |
 
 This feature subscribes to no Microsoft event: it only reads and calls the standard status change.
@@ -137,18 +174,21 @@ This feature subscribes to no Microsoft event: it only reads and calls the stand
 - **Add a check**: an `enumextension` on `MFG Finish Check Type` bound to an `MFG IFinishCheck` implementation.
 - **Value WIP differently** (for example from G/L entries on the WIP account): implement `MFG IWipValuation` and
   call `Implement()` on `MFG WIP Locator`.
+- **Read the G/L side differently** (for example from dimensions instead of the relation table): implement
+  `MFG IGLWipSource` and call `ImplementGLSource()` on `MFG WIP Locator`.
 
 ## MCP configurations
 
 | Configuration | Tools | Agent instructions |
 |---|---|---|
-| Manufacturing Advanced - WIP Control | `finishProposals` (read), `finishChecks` (read, modify), `wipOrders` (read, `evaluateFinish`, `finishOrder`) | [agent-instructions/MFG-WIP.md](agent-instructions/MFG-WIP.md) |
+| Manufacturing Advanced - WIP Control | `finishProposals` (read), `finishChecks` (read, modify), `wipOrders` (read, `evaluateFinish`, `finishOrder`, `reconcileWip`), `wipReconciliations` (read) | [agent-instructions/MFG-WIP.md](agent-instructions/MFG-WIP.md) |
 | Manufacturing Advanced - Demo WIP Control | `demoWipSet` (`importDemoData`) | [agent-instructions/MFG-Demo-WIP.md](agent-instructions/MFG-Demo-WIP.md) |
 
 ## Data Import
 
-Sample data only, through `MFG Demo WIP`.Import: the three check rows, a **Suggest** over the company's own
-released orders, and configuration package **MFG-WIP** with `MFG Finish Check` and `MFG Finish Proposal`. It
+Sample data only, through `MFG Demo WIP`.Import: the three check rows, a **Suggest** and a **Reconcile** over
+the company's own orders, and configuration package **MFG-WIP** with `MFG Finish Check`, `MFG Finish Proposal`
+and `MFG WIP Reconciliation`. It
 posts nothing, so an order appears among the proposals only if its output was really posted. The setup table is
 never in the package.
 
@@ -161,8 +201,10 @@ never in the package.
 
 ## Known Limitations
 
-- The estimated WIP comes from value entries. It is not reconciled with the G/L WIP account yet; a reconciliation
-  per order against G/L is the next segment.
+- The reconciliation follows `G/L - Item Ledger Relation`, which is filled only when inventory cost is posted to
+  G/L; with *Automatic Cost Posting* off, the difference shows as *Not posted to G/L yet* until *Post Inventory
+  Cost to G/L* runs. Manual G/L journal entries on a WIP account are not attributed to any order.
+- The reconciliation is rebuilt in full by **Reconcile**; there is no history of earlier runs.
 - When output or consumption is missing and checks that would catch it are off, the standard status change asks
   for confirmation in the client; without a client it answers yes.
 - Proposals are rebuilt in full by **Suggest**; there is no scheduled run yet.

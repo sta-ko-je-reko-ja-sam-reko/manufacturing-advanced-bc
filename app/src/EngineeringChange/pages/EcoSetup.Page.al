@@ -24,6 +24,10 @@ page 85800 "MFG ECO Setup"
                 field("MFG Enabled"; Rec."MFG Enabled")
                 {
                 }
+                field("Approval Method"; Rec."Approval Method")
+                {
+                    ApplicationArea = MFGEngineeringChange;
+                }
                 field("Separate Approver"; Rec."Separate Approver")
                 {
                     ApplicationArea = MFGEngineeringChange;

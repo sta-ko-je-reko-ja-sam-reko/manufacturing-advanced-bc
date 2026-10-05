@@ -20,4 +20,9 @@ enum 85400 "MFG Refresh Object Kind" implements "MFG IRefreshObject"
         Caption = 'Operation';
         Implementation = "MFG IRefreshObject" = "MFG Refresh Operations";
     }
+    value(3; MFGLine)
+    {
+        Caption = 'Line';
+        Implementation = "MFG IRefreshObject" = "MFG Refresh Lines";
+    }
 }

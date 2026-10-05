@@ -17,3 +17,6 @@ Unit test plan. Automated in `MFG ECO Tests` (codeunit 89016). Changes are creat
 | TEST-11 | The feature off / versions created / refused | `TheChangeIsRefusedWhileTheFeatureIsOff` |
 | TEST-12 | The guided setup / step and wizard with numbering / step 80 with numbering, series MFG-ECO assigned | `TheFeatureOffersANumberSeriesInTheGuidedSetup` |
 | TEST-13 | Sample data twice / one sample change at most, package exists | `ImportingSampleDataTwiceCreatesItOnce` |
+| TEST-14 | The template ensured twice / one template starting with the ECO event, no duplicated steps (ECO-002) | `MFG ECO Workflow Tests.TheTemplateIsCreatedOnce` |
+| TEST-15 | Workflow method, no enabled workflow / sent for approval / refused | `MFG ECO Workflow Tests.SubmittingWithoutAnEnabledWorkflowIsRefused` |
+| TEST-16 | Workflow method, a pending change / approved on the card / refused, use Requests to Approve | `MFG ECO Workflow Tests.ApprovingOnTheCardIsRefusedUnderAWorkflow` |

@@ -1,5 +1,8 @@
 # FEAT-ECO-001 - Engineering Change
 
+Segments: **ECO-001** change orders, versions, approval on the card, impact; **ECO-002** approval through Business
+Central approval workflows.
+
 > **Source/legacy reference:** N/A (greenfield).
 > **Affected objects:** feature setup with a number series, engineering change orders and lines, object types
 > behind an interface, header logic behind an interface, engine, impact, document pages, API pages, MCP
@@ -19,8 +22,25 @@ whatever day. An engineering change order puts a reason, an approval and an effe
 3. **Create versions** creates, per line, a new version named after the change, with status *Under Development*, as a
    copy of the version certified for today (or of the BOM or routing itself) made with the standard *Production
    BOM-Copy* or *Routing Line-Copy Lines*. The user edits the new versions from the line.
-4. **Send for approval** needs an effective date and a new version on every line. **Approve** or **Reject** follows; with
-   a separate approver required, the requester cannot approve. **Reopen** returns a pending or rejected change to open.
+4. **Send for approval** needs an effective date and a new version on every line. What follows depends on the
+   setup's **Approval method**, an extensible enum bound to `MFG IEcoApproval`:
+   - **On the change card** (default): the change is pending approval; **Approve** or **Reject** follows on the card;
+     with a separate approver required, the requester cannot decide. **Reopen** returns a pending or rejected change
+     to open.
+   - **Approval workflow** (ECO-002): the app raises the workflow event *Approval of an engineering change is
+     requested* through `Workflow Management`.HandleEvent; it is refused when no enabled workflow starts with that
+     event. The workflow, normally created from the template **Engineering change approval workflow** (category
+     *Manufacturing*, built with the standard `Workflow Setup`.InsertDocApprovalWorkflowSteps), restricts the record,
+     sets it to pending approval, and creates and sends approval requests. Approvers decide in **Requests to Approve**;
+     **Approve** and **Reject** on the card are refused. When the last approver approves, the standard *Release
+     Document* response approves the change, recording that approver. A rejection, or **Reopen** (which raises *An
+     approval request for an engineering change is canceled*), runs the standard *Open Document* response: the change
+     is open again, as standard documents are, and the approval entries keep the rejection. **Approvals** on the card
+     shows the entries.
+   The standard responses reach the change through events Microsoft provides for other tables
+   (`Approvals Mgmt`.OnSetStatusToPendingApproval, `Workflow Response Handling`.OnReleaseDocument / OnOpenDocument),
+   and the approval entry gets the change number through `Approvals Mgmt`.OnPopulateApprovalEntryArgument. The app
+   publishes no event of its own.
 5. **Implement** sets each new version's starting date to the effective date and certifies it, which runs the standard
    BOM or routing check. Orders refreshed from that date on use the new versions.
 6. **Impact** lists the planned, firm planned and released production order lines that use any BOM or routing the
@@ -33,7 +53,7 @@ whatever day. An engineering change order puts a reason, an approval and an effe
 
 | Table | ID | Key | Content |
 |---|---|---|---|
-| MFG ECO Setup | 85800 | Primary Key | `MFG Enabled`, ECO Nos. (→ No. Series), Separate Approver |
+| MFG ECO Setup | 85800 | Primary Key | `MFG Enabled`, ECO Nos. (→ No. Series), Separate Approver, Approval Method (ECO-002) |
 | MFG ECO Header | 85801 | No. | Description, reason, status, effective date, requested by and at, approved by and at, implemented at; FlowField Lines. `OnInsert` and `OnDelete` delegate to `MFG IEcoHeader` through `Logic()`/`Define()` |
 | MFG ECO Line | 85802 | ECO No., Line No. | Object type, no. (`OnValidate` delegates to the object type's `MFG IEcoObject`), description, new version code, what changes |
 | MFG ECO Impact | 85803 | Entry No. | `TableType = Temporary`: object, order status, order, line, item, quantity, due date, version in use |
@@ -46,19 +66,25 @@ New field on an existing table: `Application Area Setup` 85800 *MFG Engineering 
 |---|---|---|---|
 | Enum | 85800 | MFG ECO Status | Open, Pending approval, Approved, Implemented, Rejected |
 | Enum | 85801 | MFG ECO Object Type | Extensible; implements `MFG IEcoObject`; default `MFG ECO No Object` |
+| Enum | 85802 | MFG ECO Approval Method | Extensible; implements `MFG IEcoApproval`: On the change card, Approval workflow |
+| Interface | — | MFG IEcoApproval | Submit, CheckDirectDecision, Cancel |
 | Interface | — | MFG IEcoObject | ValidateNo, CreateVersion, Certify, CollectImpact, OpenVersion |
 | Interface | — | MFG IEcoHeader | Trigger_OnInsert, Trigger_OnDelete |
 | Codeunit | 85800 | MFG ECO Feature Setup | `MFG IFeatureSetup`, with the number series |
 | Codeunit | 85801 | MFG ECO App Area Sub. | Application area |
-| Codeunit | 85802 | MFG ECO Engine | CreateVersions, SubmitForApproval, Approve, Reject, Reopen, Implement, GetImpact |
+| Codeunit | 85802 | MFG ECO Engine | CreateVersions, SubmitForApproval, Approve, Reject, Reopen, Implement, GetImpact; MarkPendingApproval, MarkApproved, MarkRejected, MarkOpen for the approval methods |
 | Codeunit | 85803 | MFG ECO Header Logic | Default `MFG IEcoHeader`: numbering, requester, delete rule |
 | Codeunit | 85804 | MFG ECO No Object | Default object type |
 | Codeunit | 85805 | MFG ECO Production BOM | Object type: production BOM |
 | Codeunit | 85806 | MFG ECO Routing | Object type: routing |
 | Codeunit | 85807 | MFG Demo ECO | Sample data and configuration package |
+| Codeunit | 85808 | MFG ECO Built-in Approval | Default `MFG IEcoApproval`: on the card, separate approver rule |
+| Codeunit | 85809 | MFG ECO Workflow Approval | `MFG IEcoApproval` through approval workflows |
+| Codeunit | 85810 | MFG ECO Workflow Mgt. | Event codes, event library and combinations, workflow template, approval entry, the three status responses |
+| Codeunit | 85811 | MFG ECO Workflow Events | Subscriber proxy for the workflow and approval events, one line each |
 | Page | 85800 | MFG ECO Setup | Setup card (`ApplicationArea = All`) |
 | Page | 85801 | MFG ECO List | Engineering change orders |
-| Page | 85802 | MFG ECO Card | Document with the approval actions |
+| Page | 85802 | MFG ECO Card | Document with the approval actions and **Approvals** (approval entries) |
 | Page | 85803 | MFG ECO Subform | Lines; drill down on the new version opens it |
 | Page | 85804 | MFG ECO Impact | Impact over the temporary table |
 | Page | 85805 | MFG API ECO | API `engineeringChanges`, writable (guarded), actions `createVersions`, `submitForApproval` |
@@ -72,6 +98,9 @@ New field on an existing table: `Application Area Setup` 85800 *MFG Engineering 
 | Numbering | `No. Series`.GetNextNo | Engineering change numbers |
 | Versions | `Production BOM-Copy`.CopyBOM, `Routing Line-Copy Lines`.CopyRouting, `VersionManagement`.GetBOMVersion / GetRtngVersion | New version as a copy of the one in use |
 | Certification | `Production BOM Version` / `Routing Version` Status validation | Runs the standard checks |
+| Workflow events | `Workflow Event Handling`.OnAddWorkflowEventsToLibrary, `Workflow Setup`.OnAfterInitWorkflowTemplates | Event library and template (ECO-002) |
+| Workflow responses | `Approvals Mgmt`.OnSetStatusToPendingApproval, `Workflow Response Handling`.OnReleaseDocument / OnOpenDocument | Status of the change (ECO-002) |
+| Approval entries | `Approvals Mgmt`.OnPopulateApprovalEntryArgument | Document No. of the entry (ECO-002) |
 | Application areas | `Application Area Mgmt. Facade`.`OnGetEssentialExperienceAppAreas` | `MFG Engineering Change` |
 
 ## Extending the feature
@@ -79,6 +108,8 @@ New field on an existing table: `Application Area Setup` 85800 *MFG Engineering 
 - Add an object type, for example an assembly BOM or an item's routing assignment: an `enumextension` on
   `MFG ECO Object Type` bound to an `MFG IEcoObject` implementation.
 - Replace numbering or the delete rule: call `Define()` on `MFG ECO Header` with another `MFG IEcoHeader`.
+- Approve another way, for example through Power Automate: an `enumextension` on `MFG ECO Approval Method` bound to an
+  `MFG IEcoApproval` implementation.
 
 ## MCP configurations
 
@@ -95,7 +126,10 @@ and configuration package **MFG-ECO** with the change headers and lines. Nothing
 
 ## Known Limitations
 
-- Approval is a single step by one user; Business Central's approval workflows are not used yet.
+- Under an approval workflow a rejected change returns to *Open*, not *Rejected*, as Business Central does for its own
+  documents; the rejection is on the approval entries.
+- The workflow template is created when Business Central initializes its workflows (opening **Workflows** or
+  **Workflow Templates**). Its approver defaults to the requester's direct approver in **Approval User Setup**.
 - The impact lists orders; it does not refresh them. Refresh the orders after the effective date to use the new
   versions.
 - The new version's code is the change number, so one change creates at most one version per BOM or routing.

@@ -91,3 +91,24 @@ keys; the refresh is simulated between `BeginRun` and `CompleteRun`.
 - **Then** at most one sample order and run, and the configuration package
 
 **Automation:** `MFG Refresh Tests.ImportingSampleDataTwiceCreatesItOnce`
+
+## TEST-14 — A changed line quantity is recorded and restored (RFP-002)
+- **Given** the feature on, and a line whose quantity the planner set to 8
+- **When** the refresh sets it to 10, and the change is restored
+- **Then** one restorable line change on Quantity, and the line has 8 again
+
+**Automation:** `MFG Refresh Tests.AChangedLineQuantityIsRecordedAndRestored`
+
+## TEST-15 — A renumbered line is matched, a changed BOM is reported only
+- **Given** a line 10000 calculated from BOM MFGR-BOM1
+- **When** the refresh recreates it as line 20000 from BOM MFGR-BOM2
+- **Then** one Changed line change on Production BOM No., not restorable
+
+**Automation:** `MFG Refresh Tests.ALineMatchedAfterRenumberingAndAChangedBomIsReportedOnly`
+
+## TEST-16 — A removed line is reported only
+- **Given** a second line for another item
+- **When** the refresh removes it
+- **Then** one Removed line change, not restorable
+
+**Automation:** `MFG Refresh Tests.ARemovedLineIsReportedOnly`

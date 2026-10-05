@@ -1,7 +1,9 @@
 # FEAT-RFP-001 - Refresh Protection
 
+Segments: **RFP-001** components and operations; **RFP-002** production order lines.
+
 > **Source/legacy reference:** N/A (greenfield).
-> **Affected objects:** feature setup, refresh runs, component and operation snapshots, changes, object kinds
+> **Affected objects:** feature setup, refresh runs, component, operation and line snapshots, changes, object kinds
 > behind an interface, engine, reactions on the *Refresh Production Order* report, changes pages, actions on the
 > firm planned and released production order cards, API pages, MCP configurations, sample data and configuration
 > package.
@@ -28,6 +30,10 @@ put it back.
    - **Operations** are matched by routing reference, routing and operation number. Changed setup time, run time and
      routing link are restorable; a different work or machine centre, a removed operation and an added operation are
      reported only, because re-planning them is the planner's call.
+   - **Lines** (RFP-002) are matched by item, variant and occurrence, because the refresh recreates them and may
+     renumber them. Changed quantity, location, bin and due date are restorable, through the line's own validation,
+     which also updates its components; a different production BOM, routing, either version or unit of measure, a
+     removed line and an added line are reported only.
    A run with no changes is removed with its snapshot.
 4. With notifications on, the user sees *Refreshing production order … made n change(s)* with **Show changes**.
 5. On **Refresh changes**, the user selects lines and chooses **Restore**. A changed value is validated back to the
@@ -45,6 +51,7 @@ put it back.
 | MFG Refresh Run | 85401 | Run No. (AutoIncrement) | Order status and number, refreshed at and by (`EndUserIdentifiableInformation`), Completed; FlowFields Changes and Open Changes |
 | MFG Refresh Comp. Snapshot | 85402 | Run No., Entry No. | Order line, occurrence, component line, and the compared fields **under the same field numbers as `Prod. Order Component`** (11, 12, 13, 19, 20, 21, 28, 30, 33, 45) |
 | MFG Refresh Oper. Snapshot | 85403 | Run No., Entry No. | Routing, routing reference, operation, and the compared fields **under the same field numbers as `Prod. Order Routing Line`** (7, 8, 11, 12, 13, 34) |
+| MFG Refresh Line Snapshot | 85405 | Run No., Entry No. | Original line number, occurrence, and the compared fields under the same field numbers as `Prod. Order Line` (11, 12, 13, 20, 23, 40, 47, 60, 61, 80), except the version codes, stored in 85750 and 85751 because 99000750 and 99000751 lie outside the app's ID range and mapped back in `MFG Refresh Lines` |
 | MFG Refresh Change | 85404 | Run No., Entry No. | Kind, change type, order, order line, subject, field number and caption, old and new value, snapshot entry, current component line, routing key, Restorable, Restored |
 
 Because the snapshot fields share the standard field numbers, comparison and restore are generic: both go through
@@ -76,6 +83,7 @@ Because the snapshot fields share the standard field numbers, comparison and res
 | Codeunit | 85409 | MFG Refresh No Object | Default object kind: records nothing |
 | Codeunit | 85410 | MFG Refresh Components | Object kind: components |
 | Codeunit | 85411 | MFG Refresh Operations | Object kind: routing lines |
+| Codeunit | 85412 | MFG Refresh Lines | Object kind: production order lines (RFP-002) |
 | Page | 85400 | MFG Refresh Setup | Setup card (`ApplicationArea = All`) |
 | Page | 85401 | MFG Refresh Runs | *Production order refreshes* (history) |
 | Page | 85402 | MFG Refresh Changes | Changes with **Restore** |
@@ -90,7 +98,7 @@ Because the snapshot fields share the standard field numbers, comparison and res
 ```
 app/src/RefreshGuard/
 ├── codeunits/      DemoRefresh, RefreshAppAreaSub, RefreshComponents, RefreshEngine, RefreshEvents,
-│                   RefreshFeatureSetup, RefreshLocator, RefreshNoObject, RefreshNotification,
+│                   RefreshFeatureSetup, RefreshLines, RefreshLocator, RefreshNoObject, RefreshNotification,
 │                   RefreshOperations, RefreshReactions, RefreshSession
 ├── enums/          RefreshChangeType, RefreshObjectKind
 ├── interfaces/     IRefreshObject, IRefreshReactions
@@ -134,7 +142,7 @@ Sample data only, through `MFG Demo Refresh`.Import:
   `Create Prod. Order Lines`. The quantity per of its first component is raised by one, as a planner would, then the
   order is recalculated inside a run, so the run records the discarded change and it can be restored. Skipped when the
   order exists or the company has no such item. It does not need the feature to be enabled.
-- Configuration package **MFG-REFRESH** with the run, change and both snapshot tables, all fields. The setup table is
+- Configuration package **MFG-REFRESH** with the run, change and the three snapshot tables, all fields. The setup table is
   never in it.
 
 ## Dependencies
@@ -148,5 +156,6 @@ Sample data only, through `MFG Demo Refresh`.Import:
 
 - Only refreshes through the *Refresh Production Order* report are recorded. Code that calls `Create Prod. Order
   Lines` or `Calculate Prod. Order` directly is not.
-- Production order lines are not protected yet; they are the natural next object kind.
+- A removed or added production order line is reported only. Re-creating a line needs its components and routing
+  calculated again, which is a refresh of its own.
 - The refresh is not refused; the app only records and restores. Refusing is a reactions implementation away.

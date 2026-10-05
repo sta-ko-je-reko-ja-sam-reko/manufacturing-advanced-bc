@@ -2,8 +2,8 @@
 
 ## Overview
 
-When you refresh a production order and recalculate its components or routing, Business Central rebuilds them from
-the production BOM and routing. Anything you changed by hand, such as a quantity, a location, an extra component or
+When you refresh a production order and recalculate its lines, components or routing, Business Central rebuilds them
+from the item, the production BOM and the routing. Anything you changed by hand, such as a quantity, a location, an extra component or
 a run time, is lost without a warning. Refresh protection records what each refresh changed, tells you about it, and
 lets you put back what you want with one action.
 
@@ -34,6 +34,9 @@ Select the lines you want back and choose **Restore**:
 - a changed value goes back to what it was;
 - a removed component is created again;
 - an added component is deleted.
+
+Changes to the order's own lines are recorded too: a quantity, location, bin or due date you set by hand can be put
+back; a different BOM or routing, or a line the refresh removed or added, is shown for information.
 
 Lines where **Restorable** is off are for information only, for example an operation moved to another work centre.
 Re-enter those on the order yourself if you need to.

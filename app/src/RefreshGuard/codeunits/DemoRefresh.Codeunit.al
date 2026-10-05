@@ -114,5 +114,6 @@ codeunit 85408 "MFG Demo Refresh"
         ConfigPackageMgt.AddOwnTable(PackageCodeTok, Database::"MFG Refresh Change");
         ConfigPackageMgt.AddOwnTable(PackageCodeTok, Database::"MFG Refresh Comp. Snapshot");
         ConfigPackageMgt.AddOwnTable(PackageCodeTok, Database::"MFG Refresh Oper. Snapshot");
+        ConfigPackageMgt.AddOwnTable(PackageCodeTok, Database::"MFG Refresh Line Snapshot");
     end;
 }

@@ -31,6 +31,12 @@ table 85700 "MFG Loading Setup"
             DataClassification = CustomerContent;
             ToolTip = 'Specifies the order in which open operations are loaded onto the work center''s capacity.';
         }
+        field(40; "Allow Write-Back"; Boolean)
+        {
+            Caption = 'Allow applying the plan to orders';
+            DataClassification = CustomerContent;
+            ToolTip = 'Specifies whether the load plan can be applied to the production orders, moving each operation that fits the horizon to its planned starting date. When off, the load plan only advises.';
+        }
     }
 
     keys

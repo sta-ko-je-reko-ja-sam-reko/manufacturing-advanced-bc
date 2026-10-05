@@ -33,3 +33,10 @@ Integration test plan. Automated in `MFG WIP Integration` (codeunit 89005) with 
   both actions are refused
 
 **Automation:** manual, on `bc29loc`
+
+## TEST-05 — WIP reconciliation against posted entries (WIP-002)
+- **Given** a released order with consumption and output posted, and *Post Inventory Cost to G/L* not yet run
+- **When** the user chooses **Reconcile**, then runs *Post Inventory Cost to G/L* and chooses **Reconcile** again
+- **Then** the order is first *Not posted to G/L yet*, then *Matched*
+
+**Automation:** manual, on `bc29loc`

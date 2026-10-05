@@ -9,6 +9,9 @@ codeunit 85702 "MFG Loading Engine"
 {
     Access = Public;
 
+    var
+        WriteBackNotAllowedErr: Label 'Applying the load plan to production orders is not allowed. Turn on Allow applying the plan to orders on the finite loading setup.';
+
     /// <summary>
     /// Builds the finite load plan of a work center: its open operations on firm planned and released orders,
     /// sequenced by the strategy in the setup and loaded day by day onto the capacity the capacity source gives,
@@ -51,6 +54,48 @@ codeunit 85702 "MFG Loading Engine"
         Load(WorkCenterNo, Setup."Horizon Days");
         LoadPlanLine.SetRange("Work Center No.", WorkCenterNo);
         exit(LoadPlanLine.Count());
+    end;
+
+    /// <summary>
+    /// Applies the load plan of a work center to the production orders: every operation that fits the horizon and
+    /// whose planned starting date differs from its current one is moved there through the write-back, in plan
+    /// sequence. Requires the feature to be enabled and write-back to be allowed in the setup.
+    /// </summary>
+    /// <param name="WorkCenterNo">The work center whose calculated plan is applied.</param>
+    /// <returns>The number of operations moved.</returns>
+    procedure ApplyPlan(WorkCenterNo: Code[20]): Integer
+    var
+        Setup: Record "MFG Loading Setup";
+        LoadPlanLine: Record "MFG Load Plan Line";
+        FeatureMgt: Codeunit "MFG Feature Mgt.";
+        Locator: Codeunit "MFG Loading Locator";
+        WriteBack: Interface "MFG IPlanWriteBack";
+        Applied: Integer;
+    begin
+        FeatureMgt.CheckEnabled(Enum::"MFG Feature"::MFGFiniteLoading);
+        if not Setup.Get() then
+            Clear(Setup);
+        if not Setup."Allow Write-Back" then
+            Error(WriteBackNotAllowedErr);
+
+        WriteBack := Locator.WriteBack();
+        LoadPlanLine.SetCurrentKey("Work Center No.", "Sequence No.");
+        LoadPlanLine.SetRange("Work Center No.", WorkCenterNo);
+        LoadPlanLine.SetRange("Fits Horizon", true);
+        LoadPlanLine.SetRange("Written Back", false);
+        if not LoadPlanLine.FindSet(true) then
+            exit(0);
+
+        repeat
+            if (LoadPlanLine."Planned Starting Date" <> 0D) and (LoadPlanLine."Planned Starting Date" <> LoadPlanLine."Current Starting Date") then
+                if WriteBack.Apply(LoadPlanLine) then begin
+                    LoadPlanLine."Written Back" := true;
+                    LoadPlanLine."Current Starting Date" := LoadPlanLine."Planned Starting Date";
+                    LoadPlanLine.Modify(true);
+                    Applied += 1;
+                end;
+        until LoadPlanLine.Next() = 0;
+        exit(Applied);
     end;
 
     local procedure CollectOperations(WorkCenterNo: Code[20])

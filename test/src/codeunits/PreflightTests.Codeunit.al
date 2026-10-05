@@ -207,6 +207,94 @@ codeunit 89002 "MFG Preflight Tests"
     end;
 
     [Test]
+    procedure PickFlushingWithoutWarehouseHandlingIsFound()
+    var
+        ProductionOrder: Record "Production Order";
+        TempFinding: Record "MFG Preflight Finding" temporary;
+        CheckFlushingWhse: Codeunit "MFG Check Flushing Whse.";
+    begin
+        // [GIVEN] A Pick + Backward component at a location without warehouse handling for consumption
+        CreateHandlingLocation('MFGT-NOWH', "Prod. Consump. Whse. Handling"::"No Warehouse Handling");
+        CreateOrder(ProductionOrder, 'MFGT-FW1', 'MFGT-NOWH');
+        CreateComponent(ProductionOrder, 'MFGT-ITEM', 'MFGT-NOWH', "Flushing Method"::"Pick + Backward", '', 1);
+
+        // [WHEN] The flushing against warehouse handling check runs
+        RunCheck(CheckFlushingWhse, ProductionOrder, Enum::"MFG Preflight Check Type"::MFGFlushingWhse, TempFinding);
+
+        // [THEN] The component is reported
+        Assert.RecordCount(TempFinding, 1);
+    end;
+
+    [Test]
+    procedure PickForwardWithoutRoutingLinkIsFound()
+    var
+        ProductionOrder: Record "Production Order";
+        TempFinding: Record "MFG Preflight Finding" temporary;
+        CheckFlushingWhse: Codeunit "MFG Check Flushing Whse.";
+    begin
+        // [GIVEN] At a location with optional warehouse picks, a Pick + Forward component without a routing link
+        // and one with a routing link
+        CreateHandlingLocation('MFGT-WHOPT', "Prod. Consump. Whse. Handling"::"Warehouse Pick (optional)");
+        CreateOrder(ProductionOrder, 'MFGT-FW2', 'MFGT-WHOPT');
+        CreateComponent(ProductionOrder, 'MFGT-ITEM', 'MFGT-WHOPT', "Flushing Method"::"Pick + Forward", '', 1);
+        CreateComponent(ProductionOrder, 'MFGT-ITEM', 'MFGT-WHOPT', "Flushing Method"::"Pick + Forward", 'MFGT-LINK', 1);
+
+        // [WHEN] The flushing against warehouse handling check runs
+        RunCheck(CheckFlushingWhse, ProductionOrder, Enum::"MFG Preflight Check Type"::MFGFlushingWhse, TempFinding);
+
+        // [THEN] Only the one without a routing link is reported
+        Assert.RecordCount(TempFinding, 1);
+        TempFinding.FindFirst();
+        Assert.AreEqual(10000, TempFinding."Component Line No.", 'The component without a routing link is the one reported.');
+    end;
+
+    [Test]
+    procedure AutomaticFlushingWhereThePickIsMandatoryIsFound()
+    var
+        ProductionOrder: Record "Production Order";
+        TempFinding: Record "MFG Preflight Finding" temporary;
+        CheckFlushingWhse: Codeunit "MFG Check Flushing Whse.";
+    begin
+        // [GIVEN] At a location with mandatory warehouse picks, a backward, a forward and a Pick + Backward component
+        CreateHandlingLocation('MFGT-WHMAN', "Prod. Consump. Whse. Handling"::"Warehouse Pick (mandatory)");
+        CreateOrder(ProductionOrder, 'MFGT-FW3', 'MFGT-WHMAN');
+        CreateComponent(ProductionOrder, 'MFGT-ITEM', 'MFGT-WHMAN', "Flushing Method"::Backward, '', 1);
+        CreateComponent(ProductionOrder, 'MFGT-ITEM', 'MFGT-WHMAN', "Flushing Method"::Forward, '', 1);
+        CreateComponent(ProductionOrder, 'MFGT-ITEM', 'MFGT-WHMAN', "Flushing Method"::"Pick + Backward", '', 1);
+
+        // [WHEN] The flushing against warehouse handling check runs
+        RunCheck(CheckFlushingWhse, ProductionOrder, Enum::"MFG Preflight Check Type"::MFGFlushingWhse, TempFinding);
+
+        // [THEN] The backward and the forward component are reported, the picked one is not
+        Assert.RecordCount(TempFinding, 2);
+        TempFinding.SetRange("Component Line No.", 30000);
+        Assert.RecordIsEmpty(TempFinding);
+    end;
+
+    [Test]
+    procedure FlushingThatFitsTheWarehouseIsNotFound()
+    var
+        ProductionOrder: Record "Production Order";
+        TempFinding: Record "MFG Preflight Finding" temporary;
+        CheckFlushingWhse: Codeunit "MFG Check Flushing Whse.";
+    begin
+        // [GIVEN] Manual and backward components without warehouse handling, and a Pick + Manual component at an
+        // inventory pick location
+        CreateHandlingLocation('MFGT-NOWH', "Prod. Consump. Whse. Handling"::"No Warehouse Handling");
+        CreateHandlingLocation('MFGT-INVPK', "Prod. Consump. Whse. Handling"::"Inventory Pick/Movement");
+        CreateOrder(ProductionOrder, 'MFGT-FW4', 'MFGT-NOWH');
+        CreateComponent(ProductionOrder, 'MFGT-ITEM', 'MFGT-NOWH', "Flushing Method"::Manual, '', 1);
+        CreateComponent(ProductionOrder, 'MFGT-ITEM', 'MFGT-NOWH', "Flushing Method"::Backward, '', 1);
+        CreateComponent(ProductionOrder, 'MFGT-ITEM', 'MFGT-INVPK', "Flushing Method"::"Pick + Manual", '', 1);
+
+        // [WHEN] The flushing against warehouse handling check runs
+        RunCheck(CheckFlushingWhse, ProductionOrder, Enum::"MFG Preflight Check Type"::MFGFlushingWhse, TempFinding);
+
+        // [THEN] Nothing is reported
+        Assert.RecordIsEmpty(TempFinding);
+    end;
+
+    [Test]
     procedure EnsureChecksCreatesEveryCheckAndKeepsTheUsersSeverity()
     var
         PreflightCheck: Record "MFG Preflight Check";
@@ -222,7 +310,7 @@ codeunit 89002 "MFG Preflight Tests"
         Engine.EnsureChecks();
 
         // [THEN] There is one row per check and the user's choice survives
-        Assert.RecordCount(PreflightCheck, 4);
+        Assert.RecordCount(PreflightCheck, 5);
         PreflightCheck.Get(PreflightCheck.Check::MFGMissingBin);
         Assert.AreEqual(PreflightCheck.Severity::MFGOff, PreflightCheck.Severity, 'EnsureChecks must not overwrite a severity the user chose.');
         SetSeverity(PreflightCheck.Check::MFGMissingBin, PreflightCheck.Severity::MFGError);
@@ -424,7 +512,7 @@ codeunit 89002 "MFG Preflight Tests"
         DemoPreflight.Import();
 
         // [THEN] The checks, at most one sample order, and the configuration package exist once
-        Assert.RecordCount(PreflightCheck, 4);
+        Assert.RecordCount(PreflightCheck, 5);
         ProductionOrder.SetRange("No.", DemoPreflight.DemoOrderNo());
         Assert.IsTrue(ProductionOrder.Count() <= 1, 'The sample order must not be duplicated.');
         Assert.IsTrue(ConfigPackage.Get('MFG-PREFLIGHT'), 'Importing sample data should build the configuration package.');
@@ -544,6 +632,18 @@ codeunit 89002 "MFG Preflight Tests"
         ReservationEntry."Lot No." := LotNo;
         ReservationEntry."Quantity (Base)" := -Quantity;
         ReservationEntry.Insert(false);
+    end;
+
+    local procedure CreateHandlingLocation(LocationCode: Code[10]; Handling: Enum "Prod. Consump. Whse. Handling")
+    var
+        Location: Record Location;
+    begin
+        if Location.Get(LocationCode) then
+            exit;
+        Location.Init();
+        Location.Code := LocationCode;
+        Location."Prod. Consump. Whse. Handling" := Handling;
+        Location.Insert(false);
     end;
 
     local procedure CreateLocation(LocationCode: Code[10]; BinMandatory: Boolean)

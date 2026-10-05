@@ -81,6 +81,9 @@ page 85701 "MFG Load Plan"
                 {
                     StyleExpr = LateStyle;
                 }
+                field("Written Back"; Rec."Written Back")
+                {
+                }
             }
         }
     }
@@ -102,6 +105,24 @@ page 85701 "MFG Load Plan"
                     if WorkCenterNo = '' then
                         Error(ChooseWorkCenterErr);
                     Message(CalculatedMsg, Engine.Calculate(WorkCenterNo));
+                    CurrPage.Update(false);
+                end;
+            }
+            action(ApplyPlan)
+            {
+                Caption = 'Apply to orders';
+                ToolTip = 'Move every operation that fits the horizon to its planned starting date on the production order. Business Central reschedules the operations after it and the order line.';
+                Image = Approve;
+
+                trigger OnAction()
+                var
+                    Engine: Codeunit "MFG Loading Engine";
+                begin
+                    if WorkCenterNo = '' then
+                        Error(ChooseWorkCenterErr);
+                    if not Confirm(ApplyQst, false, WorkCenterNo) then
+                        exit;
+                    Message(AppliedMsg, Engine.ApplyPlan(WorkCenterNo));
                     CurrPage.Update(false);
                 end;
             }
@@ -135,6 +156,9 @@ page 85701 "MFG Load Plan"
                 actionref(CalculateRef; Calculate)
                 {
                 }
+                actionref(ApplyPlanRef; ApplyPlan)
+                {
+                }
                 actionref(OpenOrderRef; OpenOrder)
                 {
                 }
@@ -160,6 +184,8 @@ page 85701 "MFG Load Plan"
         LateStyle: Text;
         ChooseWorkCenterErr: Label 'Choose a work center first.';
         CalculatedMsg: Label '%1 open operation(s) were loaded.', Comment = '%1 = the number of operations';
+        ApplyQst: Label 'Move the operations of work center %1 that fit the horizon to their planned starting dates on the production orders?', Comment = '%1 = the work center number';
+        AppliedMsg: Label '%1 operation(s) were moved.', Comment = '%1 = the number of operations';
 
     local procedure ApplyWorkCenterFilter()
     begin

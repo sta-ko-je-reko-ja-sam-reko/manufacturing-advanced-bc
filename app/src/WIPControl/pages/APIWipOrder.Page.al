@@ -96,6 +96,22 @@ page 85205 "MFG API WIP Order"
         SetResult(ActionContext);
     end;
 
+    /// <summary>
+    /// Compares this order's WIP in the value entries with the WIP accounts in the general ledger and stores the
+    /// result among the WIP reconciliation lines. Changes nothing on the order.
+    /// </summary>
+    /// <param name="ActionContext">The OData action context.</param>
+    [ServiceEnabled]
+    procedure ReconcileWip(var ActionContext: WebServiceActionContext)
+    var
+        FeatureMgt: Codeunit "MFG Feature Mgt.";
+        Engine: Codeunit "MFG WIP Engine";
+    begin
+        FeatureMgt.CheckEnabled(Enum::"MFG Feature"::MFGWipControl);
+        Engine.ReconcileOrder(Rec);
+        SetResult(ActionContext);
+    end;
+
     local procedure SetResult(var ActionContext: WebServiceActionContext)
     begin
         ActionContext.SetObjectType(ObjectType::Page);

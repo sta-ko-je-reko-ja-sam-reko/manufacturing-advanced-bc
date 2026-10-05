@@ -122,6 +122,12 @@ table 85701 "MFG Load Plan Line"
             DataClassification = CustomerContent;
             ToolTip = 'Specifies how many days after the due date the operation finishes.';
         }
+        field(40; "Written Back"; Boolean)
+        {
+            Caption = 'Applied to order';
+            DataClassification = CustomerContent;
+            ToolTip = 'Specifies whether the operation was moved to its planned starting date on the production order.';
+        }
     }
 
     keys

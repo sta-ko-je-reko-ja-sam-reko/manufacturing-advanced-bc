@@ -11,7 +11,6 @@ codeunit 85802 "MFG ECO Engine"
         NoLinesErr: Label 'Engineering change %1 has no lines.', Comment = '%1 = the change number';
         NoVersionErr: Label 'Line %1 of engineering change %2 has no new version yet. Choose Create versions first.', Comment = '%1 = the line number, %2 = the change number';
         NoEffectiveDateErr: Label 'Enter the effective date of engineering change %1.', Comment = '%1 = the change number';
-        SelfApprovalErr: Label 'You requested engineering change %1, so someone else must approve it.', Comment = '%1 = the change number';
 
     /// <summary>
     /// Creates, for every line that has none yet, the new BOM or routing version the change is made in.
@@ -34,7 +33,8 @@ codeunit 85802 "MFG ECO Engine"
     end;
 
     /// <summary>
-    /// Sends an open change for approval, once every line has its new version and the effective date is set.
+    /// Sends an open change for approval, once every line has its new version and the effective date is set, through
+    /// the approval method of the setup: on the change card, or through an approval workflow.
     /// </summary>
     /// <param name="EcoHeader">The change.</param>
     procedure SubmitForApproval(var EcoHeader: Record "MFG ECO Header")
@@ -51,45 +51,38 @@ codeunit 85802 "MFG ECO Engine"
                 Error(NoVersionErr, EcoLine."Line No.", EcoHeader."No.");
         until EcoLine.Next() = 0;
 
-        SetStatus(EcoHeader, EcoHeader.Status::MFGPendingApproval);
+        ApprovalMethod().Submit(EcoHeader);
     end;
 
     /// <summary>
-    /// Approves a change pending approval. When the setup asks for a separate approver, the requester cannot
-    /// approve their own change.
+    /// Approves a change pending approval on the change card. The approval method decides whether the current user
+    /// may: on the card with a separate approver, not the requester; under an approval workflow, nobody, because
+    /// approvers decide in Requests to Approve.
     /// </summary>
     /// <param name="EcoHeader">The change.</param>
     procedure Approve(var EcoHeader: Record "MFG ECO Header")
-    var
-        Setup: Record "MFG ECO Setup";
     begin
         CheckEnabled();
         CheckStatus(EcoHeader, EcoHeader.Status::MFGPendingApproval);
-        Setup.SetLoadFields("Separate Approver");
-        if Setup.Get() then
-            if Setup."Separate Approver" and (EcoHeader."Requested By" = UserId()) then
-                Error(SelfApprovalErr, EcoHeader."No.");
-
-        EcoHeader."Approved By" := CopyStr(UserId(), 1, MaxStrLen(EcoHeader."Approved By"));
-        EcoHeader."Approved At" := CurrentDateTime();
-        SetStatus(EcoHeader, EcoHeader.Status::MFGApproved);
+        ApprovalMethod().CheckDirectDecision(EcoHeader);
+        MarkApproved(EcoHeader);
     end;
 
     /// <summary>
-    /// Rejects a change pending approval.
+    /// Rejects a change pending approval on the change card, under the same rule as approving.
     /// </summary>
     /// <param name="EcoHeader">The change.</param>
     procedure Reject(var EcoHeader: Record "MFG ECO Header")
     begin
         CheckEnabled();
         CheckStatus(EcoHeader, EcoHeader.Status::MFGPendingApproval);
-        EcoHeader."Approved By" := CopyStr(UserId(), 1, MaxStrLen(EcoHeader."Approved By"));
-        EcoHeader."Approved At" := CurrentDateTime();
-        SetStatus(EcoHeader, EcoHeader.Status::MFGRejected);
+        ApprovalMethod().CheckDirectDecision(EcoHeader);
+        MarkRejected(EcoHeader);
     end;
 
     /// <summary>
-    /// Puts a pending or rejected change back to open, so it can be edited and submitted again.
+    /// Puts a pending or rejected change back to open, so it can be edited and submitted again. A pending approval
+    /// request is withdrawn first through the approval method.
     /// </summary>
     /// <param name="EcoHeader">The change.</param>
     procedure Reopen(var EcoHeader: Record "MFG ECO Header")
@@ -97,6 +90,49 @@ codeunit 85802 "MFG ECO Engine"
         CheckEnabled();
         if not (EcoHeader.Status in [EcoHeader.Status::MFGPendingApproval, EcoHeader.Status::MFGRejected]) then
             CheckStatus(EcoHeader, EcoHeader.Status::MFGPendingApproval);
+        ApprovalMethod().Cancel(EcoHeader);
+        MarkOpen(EcoHeader);
+    end;
+
+    /// <summary>
+    /// Sets a change to pending approval. Called by the approval methods and the workflow response.
+    /// </summary>
+    /// <param name="EcoHeader">The change.</param>
+    procedure MarkPendingApproval(var EcoHeader: Record "MFG ECO Header")
+    begin
+        SetStatus(EcoHeader, EcoHeader.Status::MFGPendingApproval);
+    end;
+
+    /// <summary>
+    /// Sets a change to approved by the current user. Called on the card and by the workflow response that runs when
+    /// the last approver approves.
+    /// </summary>
+    /// <param name="EcoHeader">The change.</param>
+    procedure MarkApproved(var EcoHeader: Record "MFG ECO Header")
+    begin
+        EcoHeader."Approved By" := CopyStr(UserId(), 1, MaxStrLen(EcoHeader."Approved By"));
+        EcoHeader."Approved At" := CurrentDateTime();
+        SetStatus(EcoHeader, EcoHeader.Status::MFGApproved);
+    end;
+
+    /// <summary>
+    /// Sets a change to rejected by the current user.
+    /// </summary>
+    /// <param name="EcoHeader">The change.</param>
+    procedure MarkRejected(var EcoHeader: Record "MFG ECO Header")
+    begin
+        EcoHeader."Approved By" := CopyStr(UserId(), 1, MaxStrLen(EcoHeader."Approved By"));
+        EcoHeader."Approved At" := CurrentDateTime();
+        SetStatus(EcoHeader, EcoHeader.Status::MFGRejected);
+    end;
+
+    /// <summary>
+    /// Sets a change back to open and clears its decision. Called on reopening and by the workflow response that
+    /// runs when a request is rejected or canceled.
+    /// </summary>
+    /// <param name="EcoHeader">The change.</param>
+    procedure MarkOpen(var EcoHeader: Record "MFG ECO Header")
+    begin
         EcoHeader."Approved By" := '';
         EcoHeader."Approved At" := 0DT;
         SetStatus(EcoHeader, EcoHeader.Status::MFGOpen);
@@ -164,6 +200,16 @@ codeunit 85802 "MFG ECO Engine"
     begin
         EcoHeader.Status := NewStatus;
         EcoHeader.Modify(true);
+    end;
+
+    local procedure ApprovalMethod(): Interface "MFG IEcoApproval"
+    var
+        Setup: Record "MFG ECO Setup";
+    begin
+        Setup.SetLoadFields("Approval Method");
+        if not Setup.Get() then
+            Clear(Setup);
+        exit(Setup."Approval Method");
     end;
 
     local procedure CheckEnabled()

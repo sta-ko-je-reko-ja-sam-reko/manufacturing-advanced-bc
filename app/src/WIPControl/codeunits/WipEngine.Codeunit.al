@@ -152,6 +152,72 @@ codeunit 85202 "MFG WIP Engine"
     end;
 
     /// <summary>
+    /// Rebuilds the WIP reconciliation: for every released production order, and every order finished within the
+    /// reconciliation period, compares the WIP in its value entries with what the general ledger holds on the WIP
+    /// accounts for it. A difference within the tolerance is matched; one explained by cost not posted to the
+    /// general ledger yet is marked so; any other needs investigating.
+    /// </summary>
+    /// <returns>The number of orders reconciled.</returns>
+    procedure Reconcile(): Integer
+    var
+        Setup: Record "MFG WIP Setup";
+        ProductionOrder: Record "Production Order";
+        Reconciliation: Record "MFG WIP Reconciliation";
+    begin
+        if not Setup.Get() then
+            Clear(Setup);
+
+        Reconciliation.DeleteAll();
+        ProductionOrder.SetRange(Status, ProductionOrder.Status::Released);
+        if ProductionOrder.FindSet() then
+            repeat
+                ReconcileOrder(ProductionOrder);
+            until ProductionOrder.Next() = 0;
+
+        ProductionOrder.SetRange(Status, ProductionOrder.Status::Finished);
+        ProductionOrder.SetRange("Finished Date", WorkDate() - Setup."Reconciliation Days", WorkDate());
+        if ProductionOrder.FindSet() then
+            repeat
+                ReconcileOrder(ProductionOrder);
+            until ProductionOrder.Next() = 0;
+
+        exit(Reconciliation.Count());
+    end;
+
+    /// <summary>
+    /// Reconciles one production order and stores the result.
+    /// </summary>
+    /// <param name="ProductionOrder">The released or finished production order.</param>
+    procedure ReconcileOrder(ProductionOrder: Record "Production Order")
+    var
+        Setup: Record "MFG WIP Setup";
+        Reconciliation: Record "MFG WIP Reconciliation";
+        TempProposal: Record "MFG Finish Proposal" temporary;
+        Locator: Codeunit "MFG WIP Locator";
+        GLSource: Interface "MFG IGLWipSource";
+    begin
+        if not Setup.Get() then
+            Clear(Setup);
+        Locator.Valuation().Calculate(ProductionOrder, TempProposal);
+        GLSource := Locator.GLSource();
+
+        if Reconciliation.Get(ProductionOrder.Status, ProductionOrder."No.") then
+            Reconciliation.Delete();
+        Reconciliation.Init();
+        Reconciliation."Prod. Order Status" := ProductionOrder.Status;
+        Reconciliation."Prod. Order No." := ProductionOrder."No.";
+        Reconciliation."Source No." := ProductionOrder."Source No.";
+        Reconciliation.Description := ProductionOrder.Description;
+        Reconciliation."Value WIP" := TempProposal."Est. WIP Amount";
+        Reconciliation."G/L WIP" := GLSource.GLWipAmount(ProductionOrder);
+        Reconciliation.Difference := Reconciliation."Value WIP" - Reconciliation."G/L WIP";
+        Reconciliation."Unposted Cost" := GLSource.UnpostedCost(ProductionOrder);
+        Reconciliation.Status := ReconciliationStatus(Reconciliation, Setup."Reconciliation Tolerance");
+        Reconciliation."Reconciled At" := CurrentDateTime();
+        Reconciliation.Insert(true);
+    end;
+
+    /// <summary>
     /// Creates a configuration row, with the check's own default severity and description, for every
     /// check that does not have one yet. Rows that exist keep the severity the user chose.
     /// </summary>
@@ -173,6 +239,15 @@ codeunit 85202 "MFG WIP Engine"
                 FinishCheckRow.Insert(true);
             end;
         end;
+    end;
+
+    local procedure ReconciliationStatus(Reconciliation: Record "MFG WIP Reconciliation"; Tolerance: Decimal): Enum "MFG WIP Recon. Status"
+    begin
+        if Abs(Reconciliation.Difference) <= Tolerance then
+            exit(Enum::"MFG WIP Recon. Status"::MFGMatched);
+        if Abs(Reconciliation."Unposted Cost") > Tolerance then
+            exit(Enum::"MFG WIP Recon. Status"::MFGNotPostedYet);
+        exit(Enum::"MFG WIP Recon. Status"::MFGInvestigate);
     end;
 
     local procedure FillQuantities(ProductionOrder: Record "Production Order"; var Proposal: Record "MFG Finish Proposal")

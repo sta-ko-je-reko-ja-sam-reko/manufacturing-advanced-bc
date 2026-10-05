@@ -12,8 +12,8 @@ codeunit 85205 "MFG Demo WIP"
 
     /// <summary>
     /// Seeds the WIP control sample data. Idempotent. Creates the check configuration, builds the finish
-    /// proposals from the released production orders the company already has, and builds the feature's
-    /// configuration package. It posts nothing: an order only appears among the proposals when its output
+    /// proposals from the released production orders the company already has, reconciles their WIP with the
+    /// general ledger, and builds the feature's configuration package. It posts nothing: an order only appears among the proposals when its output
     /// has really been posted.
     /// </summary>
     procedure Import()
@@ -22,6 +22,7 @@ codeunit 85205 "MFG Demo WIP"
     begin
         Engine.EnsureChecks();
         Engine.Suggest();
+        Engine.Reconcile();
         CreateConfigPackage();
     end;
 
@@ -34,5 +35,6 @@ codeunit 85205 "MFG Demo WIP"
 
         ConfigPackageMgt.AddOwnTable(PackageCodeTok, Database::"MFG Finish Check");
         ConfigPackageMgt.AddOwnTable(PackageCodeTok, Database::"MFG Finish Proposal");
+        ConfigPackageMgt.AddOwnTable(PackageCodeTok, Database::"MFG WIP Reconciliation");
     end;
 }

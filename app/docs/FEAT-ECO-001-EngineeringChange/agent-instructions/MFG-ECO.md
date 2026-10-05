@@ -5,7 +5,9 @@ Tools:
   reason, effective date, status (Open, Pending approval, Approved, Implemented, Rejected), requester and approver.
   Bound actions: `createVersions` creates, for every line, a new BOM or routing version named after the change, as a
   copy of the version in use, under development; `submitForApproval` sends an open change for approval once every line
-  has its version and the effective date is set.
+  has its version and the effective date is set. Depending on the setup, approvers then decide on the change or in
+  their Requests to Approve through an approval workflow; if it is refused because no workflow is enabled, say that an
+  administrator must enable one.
 - `engineeringChangeLines` lists and edits the lines of an open change: type (Production BOM or Routing), number, what
   changes, and the new version once created.
 

@@ -32,6 +32,10 @@ page 85700 "MFG Loading Setup"
                 {
                     ApplicationArea = MFGFiniteLoading;
                 }
+                field("Allow Write-Back"; Rec."Allow Write-Back")
+                {
+                    ApplicationArea = MFGFiniteLoading;
+                }
             }
         }
     }
