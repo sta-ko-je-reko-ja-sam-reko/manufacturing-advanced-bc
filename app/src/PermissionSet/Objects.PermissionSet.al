@@ -1,6 +1,7 @@
 namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.Preflight;
+using ManufacturingAdvanced.WIPControl;
 
 permissionset 85000 "MFG Objects"
 {
@@ -45,5 +46,26 @@ permissionset 85000 "MFG Objects"
         codeunit "MFG Check Routing Link" = X,
         codeunit "MFG Check Flushing Tracking" = X,
         codeunit "MFG Check Missing Bin" = X,
-        codeunit "MFG Check Uncertified Design" = X;
+        codeunit "MFG Check Uncertified Design" = X,
+        table "MFG WIP Setup" = X,
+        table "MFG Finish Check" = X,
+        table "MFG Finish Proposal" = X,
+        page "MFG WIP Setup" = X,
+        page "MFG Finish Checks" = X,
+        page "MFG Finish Proposals" = X,
+        page "MFG API Finish Proposal" = X,
+        page "MFG API Finish Check" = X,
+        page "MFG API WIP Order" = X,
+        page "MFG API Demo WIP" = X,
+        codeunit "MFG WIP Feature Setup" = X,
+        codeunit "MFG WIP App Area Sub." = X,
+        codeunit "MFG WIP Engine" = X,
+        codeunit "MFG WIP Finish Order" = X,
+        codeunit "MFG WIP Value Entries" = X,
+        codeunit "MFG Demo WIP" = X,
+        codeunit "MFG Finish No Check" = X,
+        codeunit "MFG WIP Locator" = X,
+        codeunit "MFG Check Missing Consumption" = X,
+        codeunit "MFG Check Open Whse. Activity" = X,
+        codeunit "MFG Check Unfinished Ops." = X;
 }

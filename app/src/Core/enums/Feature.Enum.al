@@ -1,6 +1,7 @@
 namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.Preflight;
+using ManufacturingAdvanced.WIPControl;
 
 enum 85000 "MFG Feature" implements "MFG IFeatureSetup"
 {
@@ -16,5 +17,10 @@ enum 85000 "MFG Feature" implements "MFG IFeatureSetup"
     {
         Caption = 'Release pre-flight';
         Implementation = "MFG IFeatureSetup" = "MFG Preflight Feature Setup";
+    }
+    value(2; MFGWipControl)
+    {
+        Caption = 'WIP control';
+        Implementation = "MFG IFeatureSetup" = "MFG WIP Feature Setup";
     }
 }
