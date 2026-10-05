@@ -87,6 +87,14 @@ page 85702 "MFG API Load Plan Line"
                 {
                     Caption = 'Days late';
                 }
+                field(capacityType; Rec."Capacity Type")
+                {
+                    Caption = 'Capacity type';
+                }
+                field(capacityNo; Rec."Capacity No.")
+                {
+                    Caption = 'Capacity no.';
+                }
                 field(previousOperationNo; Rec."Previous Operation No.")
                 {
                     Caption = 'Previous operation no.';

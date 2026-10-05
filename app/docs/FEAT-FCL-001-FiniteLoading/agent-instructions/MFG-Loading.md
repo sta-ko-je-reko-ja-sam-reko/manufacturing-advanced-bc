@@ -9,7 +9,8 @@ Tools:
   action `applyLoadPlan` moves every operation of the plan that fits the horizon to its finite starting date on the
   production orders, and Business Central reschedules the rest of each order. It is refused unless an administrator
   allowed it in the setup.
-- `loadPlanLines` lists the plan: work center, sequence, order, operation, capacity need (in the work center's unit),
+- `loadPlanLines` lists the plan: work center, the capacity it runs on (the work center or one of its machine
+  centers), sequence, order, operation, capacity need (in the work center's unit),
   due date, the current dates from infinite planning, the finite starting and ending dates, whether it fits the
   horizon, whether it is late and by how many days, whether it was applied to the order, and, after
   `calculateAllLoads`, the previous operations and the earliest day the operation can start.

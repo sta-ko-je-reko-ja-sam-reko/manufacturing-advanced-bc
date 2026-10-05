@@ -21,3 +21,6 @@ firm planned operations inserted directly.
 | TEST-13 | Operation 10 of 960 minutes on the first work center, operation 20 after it on the second / all calculated / 20 starts the day 10 ends (FCL-003) | `TheNextOperationWaitsForThePreviousOneOnAnotherWorkCenter` |
 | TEST-14 | A one-day horizon; operation 10 does not fit, 20 follows it / all calculated / neither fits | `AnOperationAfterOneThatDoesNotFitDoesNotFitEither` |
 | TEST-15 | Two unrelated orders on two work centers / all calculated / both start today | `OperationsWithoutPreviousOperationsStartAtOnce` |
+| TEST-16 | Two machine centers of one work center, 480 minutes each, one operation on each / calculated / both run today (FCL-004) | `MachineCentersOfOneWorkCenterRunInParallel` |
+| TEST-17 | A machine center with 240 a day, an operation of 480 on it / calculated / it ends tomorrow | `AMachineCenterIsLoadedOnItsOwnCapacity` |
+| TEST-18 | A machine center calendar entry of 300 / the calendar source asked for the machine center and for a work center of the same number / 300 and 0 | `TheCalendarSourceReadsAMachineCentersEntries` |

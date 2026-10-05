@@ -60,6 +60,12 @@ page 85701 "MFG Load Plan"
                 {
                     Visible = WorkCenterNo = '';
                 }
+                field("Capacity Type"; Rec."Capacity Type")
+                {
+                }
+                field("Capacity No."; Rec."Capacity No.")
+                {
+                }
                 field("Previous Operation No."; Rec."Previous Operation No.")
                 {
                     Visible = false;

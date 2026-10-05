@@ -129,7 +129,7 @@ codeunit 89018 "MFG Loading Tests"
         AddCalendarEntry(130000T, 170000T, 240);
 
         // [WHEN] / [THEN] The day's capacity is 480
-        Assert.AreEqual(480, CalendarCapacity.DailyCapacity(WorkCenterNo(), WorkDate()), 'The effective capacity of the day is summed.');
+        Assert.AreEqual(480, CalendarCapacity.DailyCapacity("Capacity Type"::"Work Center", WorkCenterNo(), WorkDate()), 'The effective capacity of the day is summed.');
     end;
 
     [Test]
@@ -289,6 +289,70 @@ codeunit 89018 "MFG Loading Tests"
     end;
 
     [Test]
+    procedure MachineCentersOfOneWorkCenterRunInParallel()
+    var
+        LoadPlanLine: Record "MFG Load Plan Line";
+        Engine: Codeunit "MFG Loading Engine";
+    begin
+        // [GIVEN] 480 minutes a day on each machine center; order R needs 480 minutes on machine center 1, order S 480
+        // on machine center 2, both of the same work center
+        Prepare(Enum::"MFG Sequencing Strategy"::MFGDueDate, 30);
+        CreateMachineOperation('MFGL-R', WorkDate() + 5, 'MFGL-MC1', 480);
+        CreateMachineOperation('MFGL-S', WorkDate() + 6, 'MFGL-MC2', 480);
+
+        // [WHEN] The work center is loaded
+        Engine.Calculate(WorkCenterNo());
+
+        // [THEN] Both run today, each on its own machine
+        FindLine(LoadPlanLine, 'MFGL-R');
+        Assert.AreEqual(WorkDate(), LoadPlanLine."Planned Ending Date", 'R fills machine center 1 today.');
+        Assert.AreEqual(LoadPlanLine."Capacity Type"::"Machine Center", LoadPlanLine."Capacity Type", 'R runs on a machine center.');
+        FindLine(LoadPlanLine, 'MFGL-S');
+        Assert.AreEqual(WorkDate(), LoadPlanLine."Planned Starting Date", 'S does not wait for R: it has its own machine.');
+    end;
+
+    [Test]
+    procedure AMachineCenterIsLoadedOnItsOwnCapacity()
+    var
+        LoadPlanLine: Record "MFG Load Plan Line";
+        Engine: Codeunit "MFG Loading Engine";
+    begin
+        // [GIVEN] Machine center 3 has 240 minutes a day, and order T needs 480 minutes on it
+        Prepare(Enum::"MFG Sequencing Strategy"::MFGDueDate, 30);
+        TestCapacitySource.SetCapacity('MFGL-MC3', 240);
+        CreateMachineOperation('MFGL-T', WorkDate() + 5, 'MFGL-MC3', 480);
+
+        // [WHEN] The work center is loaded
+        Engine.Calculate(WorkCenterNo());
+
+        // [THEN] It takes two days, although the work center has 480 a day
+        FindLine(LoadPlanLine, 'MFGL-T');
+        Assert.AreEqual(WorkDate() + 1, LoadPlanLine."Planned Ending Date", 'The machine center''s own capacity is used.');
+        TestCapacitySource.ResetCapacities();
+    end;
+
+    [Test]
+    procedure TheCalendarSourceReadsAMachineCentersEntries()
+    var
+        CalendarEntry: Record "Calendar Entry";
+        CalendarCapacity: Codeunit "MFG Calendar Capacity";
+    begin
+        // [GIVEN] A calendar entry of 300 today for machine center MFGL-MC9
+        CalendarEntry.Init();
+        CalendarEntry."Capacity Type" := CalendarEntry."Capacity Type"::"Machine Center";
+        CalendarEntry."No." := 'MFGL-MC9';
+        CalendarEntry.Date := WorkDate();
+        CalendarEntry."Starting Time" := 080000T;
+        CalendarEntry."Ending Time" := 130000T;
+        CalendarEntry."Capacity (Effective)" := 300;
+        CalendarEntry.Insert(false);
+
+        // [WHEN] / [THEN] The machine center's day has 300, the work center of the same number nothing
+        Assert.AreEqual(300, CalendarCapacity.DailyCapacity("Capacity Type"::"Machine Center", 'MFGL-MC9', WorkDate()), 'The machine center''s entries are summed.');
+        Assert.AreEqual(0, CalendarCapacity.DailyCapacity("Capacity Type"::"Work Center", 'MFGL-MC9', WorkDate()), 'A work center does not see a machine center''s entries.');
+    end;
+
+    [Test]
     procedure TheFeatureRegistersAGuidedSetupStep()
     var
         TempSetupStep: Record "MFG Setup Step" temporary;
@@ -437,6 +501,32 @@ codeunit 89018 "MFG Loading Tests"
         LoadPlanLine.SetRange("Prod. Order No.", OrderNo);
         LoadPlanLine.SetRange("Operation No.", OperationNo);
         LoadPlanLine.FindFirst();
+    end;
+
+    local procedure CreateMachineOperation(OrderNo: Code[20]; DueDate: Date; MachineCenterNo: Code[20]; Minutes: Decimal)
+    var
+        ProductionOrder: Record "Production Order";
+        ProdOrderRoutingLine: Record "Prod. Order Routing Line";
+    begin
+        if not ProductionOrder.Get(ProductionOrder.Status::"Firm Planned", OrderNo) then begin
+            ProductionOrder.Init();
+            ProductionOrder.Status := ProductionOrder.Status::"Firm Planned";
+            ProductionOrder."No." := OrderNo;
+            ProductionOrder."Due Date" := DueDate;
+            ProductionOrder.Insert(false);
+        end;
+
+        ProdOrderRoutingLine.Init();
+        ProdOrderRoutingLine.Status := ProductionOrder.Status;
+        ProdOrderRoutingLine."Prod. Order No." := OrderNo;
+        ProdOrderRoutingLine."Routing Reference No." := 10000;
+        ProdOrderRoutingLine."Routing No." := 'MFGL-ROUTING';
+        ProdOrderRoutingLine."Operation No." := '10';
+        ProdOrderRoutingLine.Type := ProdOrderRoutingLine.Type::"Machine Center";
+        ProdOrderRoutingLine."No." := MachineCenterNo;
+        ProdOrderRoutingLine."Work Center No." := WorkCenterNo();
+        ProdOrderRoutingLine."Expected Capacity Need" := Minutes * 60000;
+        ProdOrderRoutingLine.Insert(false);
     end;
 
     local procedure FindLine(var LoadPlanLine: Record "MFG Load Plan Line"; OrderNo: Code[20])

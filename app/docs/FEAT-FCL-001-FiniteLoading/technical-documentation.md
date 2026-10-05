@@ -1,7 +1,7 @@
 # FEAT-FCL-001 - Finite Loading
 
 Segments: **FCL-001** the load plan; **FCL-002** applying it to the production orders; **FCL-003** all work centers
-at once, with the order of each routing's operations.
+at once, with the order of each routing's operations; **FCL-004** machine centers on their own calendars.
 
 > **Source/legacy reference:** N/A (greenfield).
 > **Affected objects:** feature setup, load plan, sequencing strategies and capacity source behind interfaces,
@@ -46,7 +46,13 @@ a proposed plan that changes no production order until the planner applies it.
    could never be planned (a loop in the routing) are marked as not fitting. Previous operations that are not in the
    plan (finished, or on no work center) do not hold anything up. **Apply to orders** with no work center chosen
    applies every work center's plan, in the order of the planned starting dates.
-6. Agents use the `mfgLoading` API group: `calculateLoad` on a work center, then `loadPlanLines`, and
+6. **Machine centers (FCL-004).** An operation on a machine center is loaded on that machine center's calendar, not
+   its work center's: each machine center of a work center keeps its own place in the day, so operations on two
+   machines run in parallel. The work center's sequence still decides the order; *Calculate all work centers* gives
+   every machine center its own queue. The capacity source takes the capacity type and number (`Calendar Entry` of
+   capacity type *Machine Center*); capacity needs stay in the work center's unit of measure, which machine center
+   calendars use too.
+7. Agents use the `mfgLoading` API group: `calculateLoad` on a work center, then `loadPlanLines`, and
    `applyLoadPlan` when a person asks for it.
 
 ## Data Model
@@ -54,7 +60,7 @@ a proposed plan that changes no production order until the planner applies it.
 | Table | ID | Key | Content |
 |---|---|---|---|
 | MFG Loading Setup | 85700 | Primary Key | `MFG Enabled`, Horizon Days, Sequencing (enum), Allow Write-Back (FCL-002) |
-| MFG Load Plan Line | 85701 | Entry No. | Work center, order status and number, routing reference and number, operation, description, due date, capacity need, current starting and ending date, sequence, finite starting and ending date, fits horizon, late, days late, Written Back (FCL-002), Previous Operation No. and Earliest Start Date (FCL-003). Keys for each strategy's order, the planned start and the routing |
+| MFG Load Plan Line | 85701 | Entry No. | Work center, order status and number, routing reference and number, operation, description, due date, capacity need, current starting and ending date, sequence, finite starting and ending date, fits horizon, late, days late, Written Back (FCL-002), Previous Operation No. and Earliest Start Date (FCL-003), Capacity Type and Capacity No. (FCL-004). Keys for each strategy's order, the planned start and the routing |
 
 New field on an existing table: `Application Area Setup` 85700 *MFG Finite Loading* (tag `MFGFiniteLoading`).
 
@@ -64,7 +70,7 @@ New field on an existing table: `Application Area Setup` 85700 *MFG Finite Loadi
 |---|---|---|---|
 | Enum | 85700 | MFG Sequencing Strategy | Extensible; implements `MFG ISequencer` |
 | Interface | — | MFG ISequencer | Sequence(var load plan lines) |
-| Interface | — | MFG ICapacitySource | DailyCapacity(work center, date) |
+| Interface | — | MFG ICapacitySource | DailyCapacity(capacity type, no., date) — work center or machine center (FCL-004) |
 | Interface | — | MFG IPlanWriteBack | Apply(load plan line): moved |
 | Codeunit | 85700 | MFG Loading Feature Setup | `MFG IFeatureSetup` |
 | Codeunit | 85701 | MFG Loading App Area Sub. | Application area |
@@ -124,4 +130,6 @@ Sample data only: the load plan of the first work center with open operations, a
 - Applying moves only the starting date. Business Central's own scheduling then sets the ending date from the
   infinite calendar, and moving one operation shifts the operations after it on the same order, which may be on
   other work centers; recalculate the plan after applying.
-- Machine centers are loaded through their work center's calendar, not their own.
+- An operation whose routing line names a work center is loaded on the work center's own calendar, even when the
+  work center also has machine centers; in Business Central a work center calendar and its machine centers'
+  calendars are separate capacities.
