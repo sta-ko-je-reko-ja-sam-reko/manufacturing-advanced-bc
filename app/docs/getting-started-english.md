@@ -4,8 +4,6 @@ Manufacturing Advanced catches the production mistakes that cost the most in Bus
 orders left unfinished with their work in progress still on the books, and components that will fail at
 posting, before they cost money. It also adds capabilities the standard product does not have.
 
-> **This app is in development.** Each feature adds its own entry below when it ships.
-
 ## Start here
 
 1. **Set up the app.** Search for *Manufacturing advanced guided setup*, or open it from *Assisted Setup*,
@@ -28,3 +26,11 @@ posting, before they cost money. It also adds capabilities the standard product 
   order changed, including what you had changed by hand, and put it back.
 - [Standard cost drift](FEAT-STD-001-StandardCostDrift/getting-started-english.md): find the items whose standard
   cost has drifted, update it through the standard cost worksheet, and see where production variances come from.
+- [Planning insight](FEAT-PLN-001-PlanningInsight/getting-started-english.md): see which items planning keeps
+  rescheduling, changing or cancelling, and which planning parameter to adjust.
+- [Shop floor terminal](FEAT-SFT-001-ShopFloorTerminal/getting-started-english.md): start and stop operations and
+  report output, scrap and downtime at the machine.
+- [Engineering change](FEAT-ECO-001-EngineeringChange/getting-started-english.md): change production BOMs and routings
+  with a reason, an approval and an effective date.
+- [Finite loading](FEAT-FCL-001-FiniteLoading/getting-started-english.md): see when a work center can really do its
+  open operations, and which will be late.

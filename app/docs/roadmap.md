@@ -11,10 +11,10 @@ with its tests and its documentation.
 | 2 | WIP Control | `FEAT-WIP-001` | **Delivered**, segment 1 (proposals, checks, finish); G/L reconciliation next | The pitfall with the largest money impact. Its pre-finish checks reuse the pre-flight's check framework |
 | 3 | Refresh Protection | `FEAT-RFP-001` | **Delivered**, segment 1 (components and operations) | Small, self-contained, and the pitfall planners complain about most. Hooks `Refresh Production Order` (`OnBeforeCalcRoutingsOrComponents`, `OnAfterRefreshProdOrder`) |
 | 4 | Standard Cost Drift | `FEAT-STD-001` | **Delivered**, segment 1 (roll-up and purchase price drift, worksheet, order variances) | Needs only read access to costs and the standard cost worksheet. Most useful once WIP Control has cleaned up the orders that were never finished |
-| 5 | Planning Insight | `FEAT-PLN-001` | Next | Needs a history of planning runs before it can say anything, so it records first and advises later |
-| 6 | Shop Floor Terminal | `FEAT-SFT-001` | Planned | The first capability module. Posts through the standard output and consumption journals |
-| 7 | Engineering Change | `FEAT-ECO-001` | Planned | Builds on BOM and routing versions; its impact view reuses Refresh Protection's line comparison |
-| 8 | Finite Loading | `FEAT-FCL-001` | Planned, last | The largest and the one closest to established ISVs. Built only as a light, single-constraint engine |
+| 5 | Planning Insight | `FEAT-PLN-001` | **Delivered**, segment 1 (history, three rules) | Needs a history of planning runs before it can say anything, so it records first and advises later |
+| 6 | Shop Floor Terminal | `FEAT-SFT-001` | **Delivered**, segment 1 (start/stop, output, scrap, downtime) | The first capability module. Posts through the standard output and consumption journals |
+| 7 | Engineering Change | `FEAT-ECO-001` | **Delivered**, segment 1 (BOM and routing versions, approval, impact) | Builds on BOM and routing versions; its impact view reuses Refresh Protection's line comparison |
+| 8 | Finite Loading | `FEAT-FCL-001` | **Delivered**, segment 1 (one work center, three strategies, proposal only) | The largest and the one closest to established ISVs. Built only as a light, single-constraint engine |
 
 ## Rules for every feature
 

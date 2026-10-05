@@ -12,6 +12,10 @@
 | `FEAT-WIP-001-WIPControl/` | Finish proposals for released orders with complete output: WIP valuation, checks before finishing, batch finish |
 | `FEAT-RFP-001-RefreshProtection/` | Snapshot, comparison and restore around Refresh Production Order, for components and operations |
 | `FEAT-STD-001-StandardCostDrift/` | Standard cost drift against roll-up and purchase price, standard cost worksheet, order variances by type |
+| `FEAT-PLN-001-PlanningInsight/` | Action message history per item and advice on planning parameters |
+| `FEAT-SFT-001-ShopFloorTerminal/` | Operator terminal: start, stop, output, scrap, downtime |
+| `FEAT-ECO-001-EngineeringChange/` | Engineering change orders for BOM and routing versions |
+| `FEAT-FCL-001-FiniteLoading/` | Finite load plan per work center |
 | `FEAT-<AREA>-<NNN>-<Title>/` | One folder per feature: technical documentation, test plans, getting started, agent instructions |
 
 ## Conventions for a feature folder
