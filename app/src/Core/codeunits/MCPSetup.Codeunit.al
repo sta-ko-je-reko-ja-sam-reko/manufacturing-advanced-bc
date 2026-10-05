@@ -1,5 +1,6 @@
 namespace ManufacturingAdvanced.Core;
 
+using System.Integration;
 using System.MCP;
 
 codeunit 85006 "MFG MCP Setup"
@@ -9,13 +10,18 @@ codeunit 85006 "MFG MCP Setup"
     /// <summary>
     /// Creates or refreshes every MCP configuration the app owns, one per feature. The foundation owns
     /// none: it holds no data worth exposing, because every setting belongs to the feature that uses it.
-    /// Idempotent, so it is safe to run on both install and upgrade.
+    /// Idempotent. Business Central accepts only published API pages as tools, and while the app is being
+    /// installed its API pages are not published yet, so on a first install this does nothing; it runs again
+    /// on upgrade and whenever a feature is switched on.
     /// </summary>
     internal procedure EnsureConfigurations()
     var
         FeatureSetup: Interface "MFG IFeatureSetup";
         Ordinal: Integer;
     begin
+        if not ApiPagesPublished() then
+            exit;
+
         foreach Ordinal in Enum::"MFG Feature".Ordinals() do begin
             FeatureSetup := Enum::"MFG Feature".FromInteger(Ordinal);
             FeatureSetup.RegisterMcpConfiguration();
@@ -55,6 +61,8 @@ codeunit 85006 "MFG MCP Setup"
         ToolId: Guid;
     begin
         ToolId := EnsureTool(ConfigId, ApiPageId);
+        if IsNullGuid(ToolId) then
+            exit;
         MCPConfig.AllowRead(ToolId, true);
         MCPConfig.AllowCreate(ToolId, AllowCreate);
         MCPConfig.AllowModify(ToolId, AllowModify);
@@ -73,6 +81,8 @@ codeunit 85006 "MFG MCP Setup"
         ToolId: Guid;
     begin
         ToolId := EnsureTool(ConfigId, ApiPageId);
+        if IsNullGuid(ToolId) then
+            exit;
         MCPConfig.AllowRead(ToolId, true);
         MCPConfig.AllowActions(ToolId, true);
     end;
@@ -95,8 +105,28 @@ codeunit 85006 "MFG MCP Setup"
         ToolObjectType: Option Page,Query,"Codeunit";
     begin
         ToolId := MCPConfig.GetAPIToolId(ConfigId, ApiPageId, ToolObjectType::Page);
-        if IsNullGuid(ToolId) then
+        if IsNullGuid(ToolId) and IsPublishedApiPage(ApiPageId) then
             ToolId := MCPConfig.CreateAPITool(ConfigId, ApiPageId);
         exit(ToolId);
+    end;
+
+    local procedure ApiPagesPublished(): Boolean
+    var
+        ApiWebService: Record "Api Web Service";
+    begin
+        ApiWebService.SetRange("Object Type", ApiWebService."Object Type"::Page);
+        ApiWebService.SetRange("Object ID", 85000, 88999);
+        ApiWebService.SetRange(Published, true);
+        exit(not ApiWebService.IsEmpty());
+    end;
+
+    local procedure IsPublishedApiPage(ApiPageId: Integer): Boolean
+    var
+        ApiWebService: Record "Api Web Service";
+    begin
+        ApiWebService.SetRange("Object Type", ApiWebService."Object Type"::Page);
+        ApiWebService.SetRange("Object ID", ApiPageId);
+        ApiWebService.SetRange(Published, true);
+        exit(not ApiWebService.IsEmpty());
     end;
 }

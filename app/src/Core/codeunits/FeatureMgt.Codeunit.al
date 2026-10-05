@@ -73,11 +73,14 @@ codeunit 85001 "MFG Feature Mgt."
     end;
 
     /// <summary>
-    /// Refreshes the application areas and restarts the session in one call. Used by a feature's
+    /// Ensures the MCP configurations, refreshes the application areas and restarts the session in one call. Used by a feature's
     /// standalone setup page; the guided setup hub refreshes per step and restarts once instead.
     /// </summary>
     procedure ApplyExperienceChange()
+    var
+        MCPSetup: Codeunit "MFG MCP Setup";
     begin
+        MCPSetup.EnsureConfigurations();
         RefreshExperienceAreas();
         RestartSession();
     end;
