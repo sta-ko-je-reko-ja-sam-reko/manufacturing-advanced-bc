@@ -29,6 +29,7 @@ permissionset 85002 "MFG Full"
         tabledata "MFG Refresh Run" = RIMD,
         tabledata "MFG Refresh Comp. Snapshot" = RIMD,
         tabledata "MFG Refresh Oper. Snapshot" = RIMD,
+        tabledata "MFG Refresh Line Snapshot" = RIMD,
         tabledata "MFG Refresh Change" = RIMD,
         tabledata "MFG Cost Drift Setup" = RIMD,
         tabledata "MFG Drift Source" = RIMD,

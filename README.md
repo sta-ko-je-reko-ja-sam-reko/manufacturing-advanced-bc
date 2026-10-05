@@ -30,7 +30,7 @@ Central 29 W1.
 | 0 | Foundation | — | Guided setup, feature facade, MCP, configuration-package and number series helpers |
 | 1 | Release Pre-flight | Guardrail | Checks a production order before release: dead routing links, flushing without tracking, missing bins, uncertified designs, flushing against warehouse handling |
 | 2 | WIP Control | Guardrail | Finds released orders with complete output, values their WIP, checks and finishes them, and reconciles each order's WIP with the G/L |
-| 3 | Refresh Protection | Guardrail | Records what Refresh Production Order changed, manual edits included, and restores them |
+| 3 | Refresh Protection | Guardrail | Records what Refresh Production Order changed, manual edits included, on components, operations and order lines, and restores them |
 | 4 | Standard Cost Drift | Guardrail | Lists stale standard costs against roll-up and purchase price, feeds the standard cost worksheet, shows order variances |
 | 5 | Planning Insight | Guardrail | Keeps the history of action messages and advises which planning parameter to adjust |
 | 6 | Shop Floor Terminal | Capability | Start and stop operations, report output, scrap and downtime, posted through the standard journal |

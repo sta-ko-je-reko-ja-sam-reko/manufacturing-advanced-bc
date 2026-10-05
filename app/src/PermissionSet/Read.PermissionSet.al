@@ -29,6 +29,7 @@ permissionset 85001 "MFG Read"
         tabledata "MFG Refresh Run" = R,
         tabledata "MFG Refresh Comp. Snapshot" = R,
         tabledata "MFG Refresh Oper. Snapshot" = R,
+        tabledata "MFG Refresh Line Snapshot" = R,
         tabledata "MFG Refresh Change" = R,
         tabledata "MFG Cost Drift Setup" = R,
         tabledata "MFG Drift Source" = R,

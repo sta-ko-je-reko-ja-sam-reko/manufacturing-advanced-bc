@@ -329,6 +329,103 @@ codeunit 89007 "MFG Refresh Tests"
     end;
 
     [Test]
+    procedure AChangedLineQuantityIsRecordedAndRestored()
+    var
+        ProductionOrder: Record "Production Order";
+        Change: Record "MFG Refresh Change";
+        ProdOrderLine: Record "Prod. Order Line";
+        Engine: Codeunit "MFG Refresh Engine";
+        RunNo: Integer;
+    begin
+        // [GIVEN] The feature is on, and an order line whose quantity the planner set to 8
+        SetFeature(true);
+        CreateOrder(ProductionOrder, 'MFGR-020');
+        SetLineQuantity(ProductionOrder, 10000, 8);
+
+        // [WHEN] The refresh sets the quantity back to the header's 10
+        RunNo := Engine.BeginRun(ProductionOrder);
+        SetLineQuantity(ProductionOrder, 10000, 10);
+        Engine.CompleteRun(ProductionOrder, RunNo);
+
+        // [THEN] One restorable line change on Quantity, and restoring it puts 8 back
+        Change.SetRange("Run No.", RunNo);
+        Change.SetRange(Kind, Change.Kind::MFGLine);
+        Assert.RecordCount(Change, 1);
+        Change.FindFirst();
+        Assert.AreEqual(ProdOrderLine.FieldNo(Quantity), Change."Field No.", 'The change is on the line quantity.');
+        Assert.IsTrue(Change.Restorable, 'A line quantity can be restored.');
+        Engine.Restore(Change);
+        ProdOrderLine.Get(ProductionOrder.Status, ProductionOrder."No.", 10000);
+        Assert.AreEqual(8, ProdOrderLine.Quantity, 'Restoring puts the planner''s quantity back.');
+        SetFeature(false);
+    end;
+
+    [Test]
+    procedure ALineMatchedAfterRenumberingAndAChangedBomIsReportedOnly()
+    var
+        ProductionOrder: Record "Production Order";
+        Change: Record "MFG Refresh Change";
+        ProdOrderLine: Record "Prod. Order Line";
+        Engine: Codeunit "MFG Refresh Engine";
+        RunNo: Integer;
+    begin
+        // [GIVEN] An order line calculated from BOM MFGR-BOM1
+        CreateOrder(ProductionOrder, 'MFGR-021');
+        ProdOrderLine.Get(ProductionOrder.Status, ProductionOrder."No.", 10000);
+        ProdOrderLine."Production BOM No." := 'MFGR-BOM1';
+        ProdOrderLine.Modify(false);
+
+        // [WHEN] The refresh recreates the line as line 20000 from BOM MFGR-BOM2
+        RunNo := Engine.BeginRun(ProductionOrder);
+        ProdOrderLine.Delete(false);
+        ProdOrderLine."Line No." := 20000;
+        ProdOrderLine."Production BOM No." := 'MFGR-BOM2';
+        ProdOrderLine.Insert(false);
+        Engine.CompleteRun(ProductionOrder, RunNo);
+
+        // [THEN] The line is matched by item, and the BOM change is reported but cannot be restored
+        Change.SetRange("Run No.", RunNo);
+        Change.SetRange(Kind, Change.Kind::MFGLine);
+        Assert.RecordCount(Change, 1);
+        Change.FindFirst();
+        Assert.AreEqual(Change."Change Type"::MFGChanged, Change."Change Type", 'The recreated line is the same line.');
+        Assert.AreEqual(ProdOrderLine.FieldNo("Production BOM No."), Change."Field No.", 'The change is on the BOM.');
+        Assert.IsFalse(Change.Restorable, 'Changing the BOM back is the planner''s call.');
+    end;
+
+    [Test]
+    procedure ARemovedLineIsReportedOnly()
+    var
+        ProductionOrder: Record "Production Order";
+        Change: Record "MFG Refresh Change";
+        ProdOrderLine: Record "Prod. Order Line";
+        Engine: Codeunit "MFG Refresh Engine";
+        RunNo: Integer;
+    begin
+        // [GIVEN] An order with a second line the planner added for another item
+        CreateOrder(ProductionOrder, 'MFGR-022');
+        ProdOrderLine.Init();
+        ProdOrderLine.Status := ProductionOrder.Status;
+        ProdOrderLine."Prod. Order No." := ProductionOrder."No.";
+        ProdOrderLine."Line No." := 20000;
+        ProdOrderLine."Item No." := 'MFGR-OUT2';
+        ProdOrderLine.Insert(false);
+
+        // [WHEN] The refresh removes it
+        RunNo := Engine.BeginRun(ProductionOrder);
+        ProdOrderLine.Delete(false);
+        Engine.CompleteRun(ProductionOrder, RunNo);
+
+        // [THEN] One removal that cannot be restored
+        Change.SetRange("Run No.", RunNo);
+        Change.SetRange(Kind, Change.Kind::MFGLine);
+        Assert.RecordCount(Change, 1);
+        Change.FindFirst();
+        Assert.AreEqual(Change."Change Type"::MFGRemoved, Change."Change Type", 'A line was removed.');
+        Assert.IsFalse(Change.Restorable, 'Re-creating a line is the planner''s call.');
+    end;
+
+    [Test]
     procedure TheFeatureRegistersAGuidedSetupStep()
     var
         TempSetupStep: Record "MFG Setup Step" temporary;
@@ -411,6 +508,15 @@ codeunit 89007 "MFG Refresh Tests"
         ProdOrderRoutingLine."No." := WorkCenterNo;
         ProdOrderRoutingLine."Run Time" := RunTime;
         ProdOrderRoutingLine.Insert(false);
+    end;
+
+    local procedure SetLineQuantity(ProductionOrder: Record "Production Order"; LineNo: Integer; NewQuantity: Decimal)
+    var
+        ProdOrderLine: Record "Prod. Order Line";
+    begin
+        ProdOrderLine.Get(ProductionOrder.Status, ProductionOrder."No.", LineNo);
+        ProdOrderLine.Quantity := NewQuantity;
+        ProdOrderLine.Modify(false);
     end;
 
     local procedure SetFeature(Enabled: Boolean)
