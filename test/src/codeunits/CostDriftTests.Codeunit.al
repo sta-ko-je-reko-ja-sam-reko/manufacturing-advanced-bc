@@ -8,6 +8,9 @@ using Microsoft.Inventory.Item;
 using Microsoft.Inventory.Ledger;
 using Microsoft.Manufacturing.Document;
 using Microsoft.Manufacturing.StandardCost;
+using Microsoft.Pricing.Asset;
+using Microsoft.Pricing.PriceList;
+using Microsoft.Pricing.Source;
 using System.IO;
 using System.TestLibraries.Utilities;
 
@@ -164,7 +167,7 @@ codeunit 89009 "MFG Cost Drift Tests"
         Engine.EnsureSources();
 
         // [THEN] One row per source, and the user's choice survives
-        Assert.RecordCount(DriftSource, 2);
+        Assert.RecordCount(DriftSource, 3);
         DriftSource.Get(DriftSource.Source::MFGRollUp);
         Assert.IsFalse(DriftSource.Active, 'EnsureSources must not overwrite the user''s choice.');
         SetSourceActive(Enum::"MFG Drift Source Type"::MFGRollUp, true);
@@ -200,10 +203,146 @@ codeunit 89009 "MFG Cost Drift Tests"
         DemoCostDrift.Import();
 
         // [THEN] The sources, the worksheet and the configuration package exist once
-        Assert.RecordCount(DriftSource, 2);
+        Assert.RecordCount(DriftSource, 3);
         Setup.Get();
         Assert.IsTrue(StandardCostWorksheetName.Get(Setup."Worksheet Name"), 'The standard cost worksheet should exist.');
         Assert.IsTrue(ConfigPackage.Get('MFG-COSTDRIFT'), 'Importing sample data should build the configuration package.');
+    end;
+
+    [Test]
+    procedure APriceListPriceReplacesTheLastPurchasePrice()
+    var
+        DriftLine: Record "MFG Cost Drift Line";
+        Engine: Codeunit "MFG Cost Drift Engine";
+    begin
+        // [GIVEN] A purchased standard-cost item with standard 10, last bought at 12, and an active purchase price of 15
+        PrepareSetup(2);
+        CreatePurchasedItem('MFGD-PL1', 10, 12);
+        AddPurchasePrice('MFGD-PL1', '', '', 15, WorkDate() - 1, 0D, '', 0);
+
+        // [WHEN] The drift is calculated
+        Engine.Calculate();
+
+        // [THEN] The price list proposes the cost, not the last purchase
+        DriftLine.Get('MFGD-PL1');
+        Assert.AreEqual(DriftLine.Source::MFGPriceList, DriftLine.Source, 'A current price list takes precedence.');
+        Assert.AreEqual(15, DriftLine."Proposed Standard Cost", 'The proposal is the price list price.');
+    end;
+
+    [Test]
+    procedure TheItemsOwnVendorPriceWins()
+    var
+        DriftLine: Record "MFG Cost Drift Line";
+        Engine: Codeunit "MFG Cost Drift Engine";
+    begin
+        // [GIVEN] An item bought from vendor MFGD-V1 at 14 on its price list, and offered by MFGD-V2 at 11
+        PrepareSetup(2);
+        CreatePurchasedItem('MFGD-PL2', 10, 0);
+        SetItemVendor('MFGD-PL2', 'MFGD-V1');
+        AddPurchasePrice('MFGD-PL2', 'MFGD-V1', '', 14, WorkDate() - 1, 0D, '', 0);
+        AddPurchasePrice('MFGD-PL2', 'MFGD-V2', '', 11, WorkDate() - 1, 0D, '', 0);
+
+        // [WHEN] The drift is calculated
+        Engine.Calculate();
+
+        // [THEN] The item's own vendor's price is proposed
+        DriftLine.Get('MFGD-PL2');
+        Assert.AreEqual(14, DriftLine."Proposed Standard Cost", 'The item''s own vendor price wins over a cheaper one.');
+    end;
+
+    [Test]
+    procedure PricesThatDoNotApplyTodayAreIgnored()
+    var
+        DriftLine: Record "MFG Cost Drift Line";
+        Engine: Codeunit "MFG Cost Drift Engine";
+    begin
+        // [GIVEN] An item last bought at 12, with purchase prices starting tomorrow, in a foreign currency, and for a
+        // minimum quantity of 10
+        PrepareSetup(2);
+        CreatePurchasedItem('MFGD-PL3', 10, 12);
+        AddPurchasePrice('MFGD-PL3', '', '', 20, WorkDate() + 1, 0D, '', 0);
+        AddPurchasePrice('MFGD-PL3', '', 'MFGD-FCY', 21, WorkDate() - 1, 0D, '', 0);
+        AddPurchasePrice('MFGD-PL3', '', '', 22, WorkDate() - 1, 0D, '', 10);
+
+        // [WHEN] The drift is calculated
+        Engine.Calculate();
+
+        // [THEN] None of them applies, and the last purchase price stays the proposal
+        DriftLine.Get('MFGD-PL3');
+        Assert.AreEqual(DriftLine.Source::MFGPurchasePrice, DriftLine.Source, 'No price list price applies today.');
+        Assert.AreEqual(12, DriftLine."Proposed Standard Cost", 'The last purchase price is proposed.');
+    end;
+
+    [Test]
+    procedure APricePerBoxIsConvertedToTheBaseUnit()
+    var
+        DriftLine: Record "MFG Cost Drift Line";
+        Engine: Codeunit "MFG Cost Drift Engine";
+    begin
+        // [GIVEN] An item with standard 5, priced at 100 per box of 10
+        PrepareSetup(2);
+        CreatePurchasedItem('MFGD-PL4', 5, 0);
+        AddUnitOfMeasure('MFGD-PL4', 'MFGD-BOX', 10);
+        AddPurchasePrice('MFGD-PL4', '', '', 100, WorkDate() - 1, 0D, 'MFGD-BOX', 0);
+
+        // [WHEN] The drift is calculated
+        Engine.Calculate();
+
+        // [THEN] The proposal is 10 per base unit
+        DriftLine.Get('MFGD-PL4');
+        Assert.AreEqual(10, DriftLine."Proposed Standard Cost", 'The box price is divided by the units in a box.');
+    end;
+
+    local procedure AddPurchasePrice(ItemNo: Code[20]; VendorNo: Code[20]; CurrencyCode: Code[10]; DirectUnitCost: Decimal; StartingDate: Date; EndingDate: Date; UnitOfMeasureCode: Code[10]; MinimumQuantity: Decimal)
+    var
+        PriceListLine: Record "Price List Line";
+        LineNo: Integer;
+    begin
+        PriceListLine.SetRange("Price List Code", 'MFGD-PRICES');
+        if PriceListLine.FindLast() then
+            LineNo := PriceListLine."Line No.";
+        PriceListLine.Init();
+        PriceListLine."Price List Code" := 'MFGD-PRICES';
+        PriceListLine."Line No." := LineNo + 10000;
+        PriceListLine."Price Type" := "Price Type"::Purchase;
+        PriceListLine."Amount Type" := "Price Amount Type"::Price;
+        PriceListLine."Asset Type" := "Price Asset Type"::Item;
+        PriceListLine."Asset No." := ItemNo;
+        if VendorNo = '' then
+            PriceListLine."Source Type" := "Price Source Type"::"All Vendors"
+        else begin
+            PriceListLine."Source Type" := "Price Source Type"::Vendor;
+            PriceListLine."Source No." := VendorNo;
+        end;
+        PriceListLine."Currency Code" := CurrencyCode;
+        PriceListLine."Starting Date" := StartingDate;
+        PriceListLine."Ending Date" := EndingDate;
+        PriceListLine."Unit of Measure Code" := UnitOfMeasureCode;
+        PriceListLine."Minimum Quantity" := MinimumQuantity;
+        PriceListLine."Direct Unit Cost" := DirectUnitCost;
+        PriceListLine.Status := "Price Status"::Active;
+        PriceListLine.Insert(false);
+    end;
+
+    local procedure SetItemVendor(ItemNo: Code[20]; VendorNo: Code[20])
+    var
+        Item: Record Item;
+    begin
+        Item.Get(ItemNo);
+        Item."Vendor No." := VendorNo;
+        Item.Modify(false);
+    end;
+
+    local procedure AddUnitOfMeasure(ItemNo: Code[20]; UnitOfMeasureCode: Code[10]; QtyPerUnit: Decimal)
+    var
+        ItemUnitOfMeasure: Record "Item Unit of Measure";
+    begin
+        ItemUnitOfMeasure.Init();
+        ItemUnitOfMeasure."Item No." := ItemNo;
+        ItemUnitOfMeasure.Code := UnitOfMeasureCode;
+        ItemUnitOfMeasure."Qty. per Unit of Measure" := QtyPerUnit;
+        if not ItemUnitOfMeasure.Insert(false) then
+            ItemUnitOfMeasure.Modify(false);
     end;
 
     local procedure CreatePurchasedItem(ItemNo: Code[20]; StandardCost: Decimal; LastDirectCost: Decimal)

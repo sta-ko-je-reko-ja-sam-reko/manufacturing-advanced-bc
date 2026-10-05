@@ -127,6 +127,7 @@ permissionset 85000 "MFG Objects"
         codeunit "MFG Drift No Source" = X,
         codeunit "MFG Drift Roll-up" = X,
         codeunit "MFG Drift Purchase Price" = X,
+        codeunit "MFG Drift Price List" = X,
         codeunit "MFG Demo Cost Drift" = X,
         table "MFG Planning Setup" = X,
         table "MFG Planning Run" = X,

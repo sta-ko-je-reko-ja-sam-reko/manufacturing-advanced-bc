@@ -1,5 +1,7 @@
 # FEAT-STD-001 - Standard Cost Drift
 
+Segments: **STD-001** roll-up and last purchase price, worksheet, order variances; **STD-002** purchase price lists.
+
 > **Source/legacy reference:** N/A (greenfield).
 > **Affected objects:** feature setup, drift sources behind an interface, drift lines, order variances, engine,
 > pages, action on the standard cost worksheet, API pages, MCP configurations, sample data and configuration
@@ -20,8 +22,14 @@ the **standard cost worksheet** the standard product already has, and shows fini
      with the standard `Calculate Standard Cost`.`CalcItems` into a temporary item, exactly as *Roll Up Standard
      Cost* does, without changing any item.
    - **Last purchase price**: every purchased standard-cost item that has been bought proposes its last direct cost.
+   - **Purchase price list** (STD-002): every purchased standard-cost item with an active purchase price valid on the
+     work date (`Price List Line`: price type Purchase, local currency, no variant, minimum quantity up to 1, not a
+     discount line) proposes that price per base unit of measure — its own vendor's (`Item`.`Vendor No.`) when there
+     is one, otherwise the lowest. It replaces the last purchase price for the same item, because it is what the item
+     will cost from now on.
    Each item whose proposal differs from its current standard by at least the tolerance is listed with the drift
-   amount and percentage. When two sources price the same item, the first source in the enum wins.
+   amount and percentage. When two sources price the same item, the first source in the enum wins, except that a
+   price list price replaces a last purchase price.
 3. The cost accountant selects lines and chooses **Send to worksheet**. Each line is written to the standard cost
    worksheet named in the setup, created when missing, through the source that proposed it:
    - a roll-up line with every single-level and rolled-up cost share, as *Roll Up Standard Cost* writes it;
@@ -57,6 +65,7 @@ New field on an existing table: `Application Area Setup` 85300 *MFG Cost Drift* 
 | Codeunit | 85303 | MFG Drift No Source | Default source: proposes nothing |
 | Codeunit | 85304 | MFG Drift Roll-up | Source: `Calculate Standard Cost`.CalcItems |
 | Codeunit | 85305 | MFG Drift Purchase Price | Source: last direct cost |
+| Codeunit | 85307 | MFG Drift Price List | Source: current purchase price list price (STD-002) |
 | Codeunit | 85306 | MFG Demo Cost Drift | Sample data and configuration package |
 | Page | 85300 | MFG Cost Drift Setup | Setup card (`ApplicationArea = All`) with the sources part |
 | Page | 85301 | MFG Drift Sources | ListPart |
@@ -73,7 +82,7 @@ New field on an existing table: `Application Area Setup` 85300 *MFG Cost Drift* 
 ```
 app/src/CostDrift/
 ├── codeunits/      CostDriftAppAreaSub, CostDriftEngine, CostDriftFeatureSetup, DemoCostDrift, DriftNoSource,
-│                   DriftPurchasePrice, DriftRollUp
+│                   DriftPriceList, DriftPurchasePrice, DriftRollUp
 ├── enums/          DriftSourceType
 ├── interfaces/     IDriftSource
 ├── pageextensions/ StdCostWorksheet
@@ -126,4 +135,5 @@ The setup table is never in the package.
   for example because its BOM is not certified, stops the calculation with the standard error, as *Roll Up Standard
   Cost* does.
 - Variances appear only after *Adjust Cost - Item Entries* has run for the finished orders.
-- The purchase price source uses the last direct cost only; price lists and blanket orders are a future source.
+- Purchase prices come from the last direct cost and from price lists; blanket orders are not a source. Prices in a
+  foreign currency, for a variant or from a minimum quantity above 1 are not used.
