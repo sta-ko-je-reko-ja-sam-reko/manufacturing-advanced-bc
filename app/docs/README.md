@@ -8,6 +8,7 @@
 | [getting-started-english.md](getting-started-english.md) | End-user guide: the master index, one link per feature as it ships |
 | [privacy.md](privacy.md) | What the app stores and sends |
 | `FEAT-CORE-001-Foundation/` | Setup record, guided setup, feature facade, shared helpers |
+| `FEAT-PRE-001-ReleasePreflight/` | Checks before release: routing links, flushing and item tracking, production bins, certified designs |
 | `FEAT-<AREA>-<NNN>-<Title>/` | One folder per feature: technical documentation, test plans, getting started, agent instructions |
 
 ## Conventions for a feature folder

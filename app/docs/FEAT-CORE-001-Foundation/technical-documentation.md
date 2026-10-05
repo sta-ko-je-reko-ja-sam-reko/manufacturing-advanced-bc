@@ -119,5 +119,5 @@ app/src/
 
 ## Known Limitations
 
-- No feature is registered yet, so the hub lists only the foundation and no MCP configuration is created.
+- The foundation itself creates no MCP configuration; each feature registers its own (Release Pre-flight is the first).
 - The foundation ships no role centre. One is added when there are features with something to show.

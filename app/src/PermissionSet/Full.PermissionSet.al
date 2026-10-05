@@ -1,5 +1,7 @@
 namespace ManufacturingAdvanced.Core;
 
+using ManufacturingAdvanced.Preflight;
+
 permissionset 85002 "MFG Full"
 {
     Assignable = true;
@@ -8,5 +10,8 @@ permissionset 85002 "MFG Full"
 
     Permissions =
         tabledata "MFG Setup" = RIMD,
-        tabledata "MFG Demo Data" = RIMD;
+        tabledata "MFG Demo Data" = RIMD,
+        tabledata "MFG Preflight Setup" = RIMD,
+        tabledata "MFG Preflight Check" = RIMD,
+        tabledata "MFG Preflight Finding" = RIMD;
 }

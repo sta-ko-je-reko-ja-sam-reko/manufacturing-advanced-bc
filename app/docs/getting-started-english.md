@@ -20,4 +20,5 @@ posting, before they cost money. It also adds capabilities the standard product 
 
 ## Features
 
-None yet. The first is Release Pre-flight, which checks a production order before you release it.
+- [Release pre-flight](FEAT-PRE-001-ReleasePreflight/getting-started-english.md): check a production order
+  before it is released, and stop or warn about the problems that would make consumption or output fail later.
