@@ -1,8 +1,12 @@
 namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.CostDrift;
+using ManufacturingAdvanced.EngineeringChange;
+using ManufacturingAdvanced.FiniteLoading;
+using ManufacturingAdvanced.PlanningInsight;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
+using ManufacturingAdvanced.ShopFloor;
 using ManufacturingAdvanced.WIPControl;
 
 enum 85000 "MFG Feature" implements "MFG IFeatureSetup"
@@ -34,5 +38,25 @@ enum 85000 "MFG Feature" implements "MFG IFeatureSetup"
     {
         Caption = 'Standard cost drift';
         Implementation = "MFG IFeatureSetup" = "MFG Cost Drift Feature Setup";
+    }
+    value(5; MFGPlanningInsight)
+    {
+        Caption = 'Planning insight';
+        Implementation = "MFG IFeatureSetup" = "MFG Planning Feature Setup";
+    }
+    value(6; MFGShopFloor)
+    {
+        Caption = 'Shop floor terminal';
+        Implementation = "MFG IFeatureSetup" = "MFG Shop Floor Feature Setup";
+    }
+    value(7; MFGEngineeringChange)
+    {
+        Caption = 'Engineering change';
+        Implementation = "MFG IFeatureSetup" = "MFG ECO Feature Setup";
+    }
+    value(8; MFGFiniteLoading)
+    {
+        Caption = 'Finite loading';
+        Implementation = "MFG IFeatureSetup" = "MFG Loading Feature Setup";
     }
 }
