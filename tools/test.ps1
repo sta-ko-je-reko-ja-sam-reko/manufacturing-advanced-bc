@@ -42,6 +42,16 @@ $app = Get-Package (Join-Path $repo 'app')
 $test = Get-Package (Join-Path $repo 'test')
 
 if (-not $SkipPublish) {
+    # Publishing the app makes the server recompile every installed app that depends on it. An old test app built
+    # against a previous interface then fails to compile and the publish is rolled back, so remove it first; the
+    # fresh test package is published right after the app.
+    Get-BcContainerAppInfo -containerName $ContainerName -tenantSpecificProperties |
+        Where-Object { $_.AppId -eq $test.Id } |
+        ForEach-Object {
+            Write-Host ("Removing {0} {1} before publishing." -f $_.Name, $_.Version) -ForegroundColor Cyan
+            Unpublish-BcContainerApp -containerName $ContainerName -appName $_.Name -publisher $_.Publisher -version $_.Version -unInstall -force
+        }
+
     foreach ($package in $app, $test) {
         try {
             Publish-BcContainerApp -containerName $ContainerName -credential $Credential -appFile $package.Path -useDevEndpoint -skipVerification
