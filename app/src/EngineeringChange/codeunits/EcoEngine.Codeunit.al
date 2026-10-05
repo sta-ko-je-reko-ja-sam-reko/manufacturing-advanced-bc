@@ -1,6 +1,8 @@
 namespace ManufacturingAdvanced.EngineeringChange;
 
 using ManufacturingAdvanced.Core;
+using Microsoft.Inventory.Ledger;
+using Microsoft.Manufacturing.Document;
 
 codeunit 85802 "MFG ECO Engine"
 {
@@ -10,6 +12,7 @@ codeunit 85802 "MFG ECO Engine"
         WrongStatusErr: Label 'Engineering change %1 is %2. This step needs it to be %3.', Comment = '%1 = the change number, %2 = its status, %3 = the status needed';
         NoLinesErr: Label 'Engineering change %1 has no lines.', Comment = '%1 = the change number';
         NoVersionErr: Label 'Line %1 of engineering change %2 has no new version yet. Choose Create versions first.', Comment = '%1 = the line number, %2 = the change number';
+        OrderKeyTok: Label '%1|%2', Locked = true;
         NoEffectiveDateErr: Label 'Enter the effective date of engineering change %1.', Comment = '%1 = the change number';
 
     /// <summary>
@@ -161,6 +164,46 @@ codeunit 85802 "MFG ECO Engine"
     end;
 
     /// <summary>
+    /// Refreshes the production orders an implemented change impacts, once each, so they pick up the versions valid
+    /// on their dates. Skipped: orders due before the effective date, which keep the old versions anyway, and
+    /// released orders with posted entries, which Business Central does not recalculate.
+    /// </summary>
+    /// <param name="EcoHeader">The implemented change.</param>
+    /// <param name="Refreshed">Returns the number of orders refreshed.</param>
+    /// <param name="Skipped">Returns the number of impacted orders left alone.</param>
+    procedure RefreshImpactedOrders(EcoHeader: Record "MFG ECO Header"; var Refreshed: Integer; var Skipped: Integer)
+    var
+        TempImpact: Record "MFG ECO Impact" temporary;
+        ProductionOrder: Record "Production Order";
+        Locator: Codeunit "MFG ECO Locator";
+        OrderRefresh: Interface "MFG IEcoOrderRefresh";
+        Done: List of [Text];
+        OrderKey: Text;
+    begin
+        CheckEnabled();
+        CheckStatus(EcoHeader, EcoHeader.Status::MFGImplemented);
+        Refreshed := 0;
+        Skipped := 0;
+        OrderRefresh := Locator.OrderRefresh();
+
+        GetImpact(EcoHeader, TempImpact);
+        if not TempImpact.FindSet() then
+            exit;
+        repeat
+            OrderKey := StrSubstNo(OrderKeyTok, TempImpact."Prod. Order Status".AsInteger(), TempImpact."Prod. Order No.");
+            if not Done.Contains(OrderKey) then begin
+                Done.Add(OrderKey);
+                if ProductionOrder.Get(TempImpact."Prod. Order Status", TempImpact."Prod. Order No.") then
+                    if MustRefresh(ProductionOrder, EcoHeader."Effective Date") then begin
+                        OrderRefresh.Refresh(ProductionOrder);
+                        Refreshed += 1;
+                    end else
+                        Skipped += 1;
+            end;
+        until TempImpact.Next() = 0;
+    end;
+
+    /// <summary>
     /// Lists the open production order lines that use any BOM or routing the change touches.
     /// </summary>
     /// <param name="EcoHeader">The change.</param>
@@ -180,6 +223,19 @@ codeunit 85802 "MFG ECO Engine"
             EcoObject.CollectImpact(EcoLine, TempImpact);
         until EcoLine.Next() = 0;
         TempImpact.Reset();
+    end;
+
+    local procedure MustRefresh(ProductionOrder: Record "Production Order"; EffectiveDate: Date): Boolean
+    var
+        ItemLedgerEntry: Record "Item Ledger Entry";
+    begin
+        if ProductionOrder."Due Date" < EffectiveDate then
+            exit(false);
+        if ProductionOrder.Status <> ProductionOrder.Status::Released then
+            exit(true);
+        ItemLedgerEntry.SetRange("Order Type", ItemLedgerEntry."Order Type"::Production);
+        ItemLedgerEntry.SetRange("Order No.", ProductionOrder."No.");
+        exit(ItemLedgerEntry.IsEmpty());
     end;
 
     local procedure FindLines(EcoHeader: Record "MFG ECO Header"; var EcoLine: Record "MFG ECO Line")

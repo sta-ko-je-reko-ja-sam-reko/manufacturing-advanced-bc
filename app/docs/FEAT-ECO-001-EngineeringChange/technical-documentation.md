@@ -1,7 +1,7 @@
 # FEAT-ECO-001 - Engineering Change
 
 Segments: **ECO-001** change orders, versions, approval on the card, impact; **ECO-002** approval through Business
-Central approval workflows.
+Central approval workflows; **ECO-003** refreshing the impacted orders after implementation.
 
 > **Source/legacy reference:** N/A (greenfield).
 > **Affected objects:** feature setup with a number series, engineering change orders and lines, object types
@@ -43,10 +43,16 @@ whatever day. An engineering change order puts a reason, an approval and an effe
    publishes no event of its own.
 5. **Implement** sets each new version's starting date to the effective date and certifies it, which runs the standard
    BOM or routing check. Orders refreshed from that date on use the new versions.
-6. **Impact** lists the planned, firm planned and released production order lines that use any BOM or routing the
+6. **Refresh impacted orders (ECO-003).** On an implemented change, the action refreshes each impacted production
+   order once (routing and components, backward, not the lines) through `MFG IEcoOrderRefresh`, by default the
+   standard *Refresh Production Order* without its request page, so the orders pick up the versions valid on their
+   dates. Orders due before the effective date keep the old versions anyway and are left alone, as are released orders
+   with posted entries, which Business Central refuses to recalculate. With Refresh Protection on, every refresh is
+   recorded and the manual changes it replaced can be restored. The action is on the card only; agents cannot run it.
+7. **Impact** lists the planned, firm planned and released production order lines that use any BOM or routing the
    change touches, with the version they were calculated with.
-7. Only an open or rejected change can be deleted; the versions it created stay with their BOM or routing.
-8. Agents use the `mfgEco` API group to create changes and lines and to call `createVersions` and `submitForApproval`.
+8. Only an open or rejected change can be deleted; the versions it created stay with their BOM or routing.
+9. Agents use the `mfgEco` API group to create changes and lines and to call `createVersions` and `submitForApproval`.
    Approval and implementation are deliberately not exposed: a person decides those in Business Central.
 
 ## Data Model
@@ -72,7 +78,7 @@ New field on an existing table: `Application Area Setup` 85800 *MFG Engineering 
 | Interface | — | MFG IEcoHeader | Trigger_OnInsert, Trigger_OnDelete |
 | Codeunit | 85800 | MFG ECO Feature Setup | `MFG IFeatureSetup`, with the number series |
 | Codeunit | 85801 | MFG ECO App Area Sub. | Application area |
-| Codeunit | 85802 | MFG ECO Engine | CreateVersions, SubmitForApproval, Approve, Reject, Reopen, Implement, GetImpact; MarkPendingApproval, MarkApproved, MarkRejected, MarkOpen for the approval methods |
+| Codeunit | 85802 | MFG ECO Engine | CreateVersions, SubmitForApproval, Approve, Reject, Reopen, Implement, GetImpact, RefreshImpactedOrders; MarkPendingApproval, MarkApproved, MarkRejected, MarkOpen for the approval methods |
 | Codeunit | 85803 | MFG ECO Header Logic | Default `MFG IEcoHeader`: numbering, requester, delete rule |
 | Codeunit | 85804 | MFG ECO No Object | Default object type |
 | Codeunit | 85805 | MFG ECO Production BOM | Object type: production BOM |
@@ -82,9 +88,12 @@ New field on an existing table: `Application Area Setup` 85800 *MFG Engineering 
 | Codeunit | 85809 | MFG ECO Workflow Approval | `MFG IEcoApproval` through approval workflows |
 | Codeunit | 85810 | MFG ECO Workflow Mgt. | Event codes, event library and combinations, workflow template, approval entry, the three status responses |
 | Codeunit | 85811 | MFG ECO Workflow Events | Subscriber proxy for the workflow and approval events, one line each |
+| Codeunit | 85812 | MFG ECO Report Refresh | Default `MFG IEcoOrderRefresh`: the standard Refresh Production Order (ECO-003) |
+| Codeunit | 85813 | MFG ECO Locator | Resolver of the order refresh, with `ImplementOrderRefresh()` and `ResetOrderRefresh()` |
+| Interface | — | MFG IEcoOrderRefresh | Refresh(production order) |
 | Page | 85800 | MFG ECO Setup | Setup card (`ApplicationArea = All`) |
 | Page | 85801 | MFG ECO List | Engineering change orders |
-| Page | 85802 | MFG ECO Card | Document with the approval actions and **Approvals** (approval entries) |
+| Page | 85802 | MFG ECO Card | Document with the approval actions, **Approvals** (approval entries) and **Refresh impacted orders** |
 | Page | 85803 | MFG ECO Subform | Lines; drill down on the new version opens it |
 | Page | 85804 | MFG ECO Impact | Impact over the temporary table |
 | Page | 85805 | MFG API ECO | API `engineeringChanges`, writable (guarded), actions `createVersions`, `submitForApproval` |
@@ -130,6 +139,6 @@ and configuration package **MFG-ECO** with the change headers and lines. Nothing
   documents; the rejection is on the approval entries.
 - The workflow template is created when Business Central initializes its workflows (opening **Workflows** or
   **Workflow Templates**). Its approver defaults to the requester's direct approver in **Approval User Setup**.
-- The impact lists orders; it does not refresh them. Refresh the orders after the effective date to use the new
-  versions.
+- **Refresh impacted orders** refreshes the whole order's routing and components, not only the lines that use the
+  changed BOM or routing; Refresh Protection records anything that was overwritten.
 - The new version's code is the change number, so one change creates at most one version per BOM or routing.

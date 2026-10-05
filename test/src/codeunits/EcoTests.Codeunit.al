@@ -2,6 +2,8 @@ namespace ManufacturingAdvanced.Test;
 
 using ManufacturingAdvanced.Core;
 using ManufacturingAdvanced.EngineeringChange;
+using Microsoft.Inventory.Ledger;
+using Microsoft.Manufacturing.Document;
 using System.IO;
 using System.TestLibraries.Utilities;
 
@@ -249,6 +251,63 @@ codeunit 89016 "MFG ECO Tests"
         Assert.IsTrue(ConfigPackage.Get('MFG-ECO'), 'Importing sample data should build the configuration package.');
     end;
 
+    [Test]
+    procedure OnlyImpactedOrdersThatCanTakeTheChangeAreRefreshed()
+    var
+        EcoHeader: Record "MFG ECO Header";
+        TestEcoOrderRefresh: Codeunit "MFG Test ECO Order Refresh";
+        Locator: Codeunit "MFG ECO Locator";
+        Engine: Codeunit "MFG ECO Engine";
+        Refreshed: Integer;
+        Skipped: Integer;
+    begin
+        // [GIVEN] An implemented change on BOM MFGE-BOM effective in ten days, and orders using that BOM: a firm planned
+        // one due later with two lines, one due before the effective date, a released one with posted entries, and a
+        // released one without
+        Prepare(false);
+        CreateChange(EcoHeader, 'MFGE-301', WorkDate() + 10, 'MFGE-301');
+        EcoHeader.Status := EcoHeader.Status::MFGImplemented;
+        EcoHeader.Modify(false);
+        CreateOrderWithBom('MFGE-O1', "Production Order Status"::"Firm Planned", WorkDate() + 20, 2);
+        CreateOrderWithBom('MFGE-O2', "Production Order Status"::"Firm Planned", WorkDate() + 5, 1);
+        CreateOrderWithBom('MFGE-O3', "Production Order Status"::Released, WorkDate() + 20, 1);
+        AddPostedEntry('MFGE-O3');
+        CreateOrderWithBom('MFGE-O4', "Production Order Status"::Released, WorkDate() + 20, 1);
+
+        // [WHEN] The impacted orders are refreshed
+        Locator.ImplementOrderRefresh(TestEcoOrderRefresh);
+        Engine.RefreshImpactedOrders(EcoHeader, Refreshed, Skipped);
+        Locator.ResetOrderRefresh();
+
+        // [THEN] The two that can take the new version are refreshed once each; the other two are left alone
+        Assert.AreEqual(2, Refreshed, 'Two orders are refreshed.');
+        Assert.AreEqual(2, Skipped, 'Two orders are left alone.');
+        Assert.AreEqual(2, TestEcoOrderRefresh.RefreshCount(), 'An order with two lines is refreshed once.');
+        Assert.IsTrue(TestEcoOrderRefresh.WasRefreshed('MFGE-O1'), 'A firm planned order due after the effective date is refreshed.');
+        Assert.IsTrue(TestEcoOrderRefresh.WasRefreshed('MFGE-O4'), 'A released order with nothing posted is refreshed.');
+    end;
+
+    [Test]
+    procedure RefreshingImpactedOrdersNeedsAnImplementedChange()
+    var
+        EcoHeader: Record "MFG ECO Header";
+        Engine: Codeunit "MFG ECO Engine";
+        Refreshed: Integer;
+        Skipped: Integer;
+    begin
+        // [GIVEN] An approved change that is not implemented yet
+        Prepare(false);
+        CreateChange(EcoHeader, 'MFGE-302', WorkDate() + 10, 'MFGE-302');
+        EcoHeader.Status := EcoHeader.Status::MFGApproved;
+        EcoHeader.Modify(false);
+
+        // [WHEN] Its impacted orders are refreshed
+        asserterror Engine.RefreshImpactedOrders(EcoHeader, Refreshed, Skipped);
+
+        // [THEN] It is refused: the new versions are not certified yet
+        Assert.ExpectedError('This step needs it to be Implemented');
+    end;
+
     local procedure Prepare(SeparateApprover: Boolean)
     var
         Setup: Record "MFG ECO Setup";
@@ -275,6 +334,43 @@ codeunit 89016 "MFG ECO Tests"
         EcoLine."No." := 'MFGE-BOM';
         EcoLine."New Version Code" := NewVersionCode;
         EcoLine.Insert(false);
+    end;
+
+    local procedure CreateOrderWithBom(OrderNo: Code[20]; Status: Enum "Production Order Status"; DueDate: Date; LineCount: Integer)
+    var
+        ProductionOrder: Record "Production Order";
+        ProdOrderLine: Record "Prod. Order Line";
+        LineIndex: Integer;
+    begin
+        ProductionOrder.Init();
+        ProductionOrder.Status := Status;
+        ProductionOrder."No." := OrderNo;
+        ProductionOrder."Due Date" := DueDate;
+        ProductionOrder.Insert(false);
+
+        for LineIndex := 1 to LineCount do begin
+            ProdOrderLine.Init();
+            ProdOrderLine.Status := Status;
+            ProdOrderLine."Prod. Order No." := OrderNo;
+            ProdOrderLine."Line No." := LineIndex * 10000;
+            ProdOrderLine."Production BOM No." := 'MFGE-BOM';
+            ProdOrderLine."Due Date" := DueDate;
+            ProdOrderLine.Insert(false);
+        end;
+    end;
+
+    local procedure AddPostedEntry(OrderNo: Code[20])
+    var
+        ItemLedgerEntry: Record "Item Ledger Entry";
+        EntryNo: Integer;
+    begin
+        if ItemLedgerEntry.FindLast() then
+            EntryNo := ItemLedgerEntry."Entry No.";
+        ItemLedgerEntry.Init();
+        ItemLedgerEntry."Entry No." := EntryNo + 1;
+        ItemLedgerEntry."Order Type" := ItemLedgerEntry."Order Type"::Production;
+        ItemLedgerEntry."Order No." := OrderNo;
+        ItemLedgerEntry.Insert(false);
     end;
 
     local procedure SetFeature(Enabled: Boolean; SeparateApprover: Boolean)

@@ -44,3 +44,12 @@ Integration test plan. Automated in `MFG ECO Integration` (codeunit 89017) with 
 - **Then** it is open and has no open approval entry
 
 **Automation:** `MFG ECO Workflow Tests.ReopeningCancelsThePendingRequest`
+
+## TEST-07 — Refreshing the impacted orders (ECO-003)
+- **Given** refresh protection on, an implemented change on a certified BOM, and a firm planned order on that BOM due
+  after the effective date with a manual change on a component
+- **When** the user chooses **Refresh impacted orders**
+- **Then** the order's components come from the new version, and the refresh run lists the manual change, which can
+  be restored
+
+**Automation:** manual, on `bc29loc`

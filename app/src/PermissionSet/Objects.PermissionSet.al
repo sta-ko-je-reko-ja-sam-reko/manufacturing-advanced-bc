@@ -196,6 +196,8 @@ permissionset 85000 "MFG Objects"
         codeunit "MFG ECO Workflow Approval" = X,
         codeunit "MFG ECO Workflow Mgt." = X,
         codeunit "MFG ECO Workflow Events" = X,
+        codeunit "MFG ECO Report Refresh" = X,
+        codeunit "MFG ECO Locator" = X,
         table "MFG Loading Setup" = X,
         table "MFG Load Plan Line" = X,
         page "MFG Loading Setup" = X,

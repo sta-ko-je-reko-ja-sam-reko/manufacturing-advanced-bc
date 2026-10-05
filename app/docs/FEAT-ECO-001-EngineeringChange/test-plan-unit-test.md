@@ -20,3 +20,5 @@ Unit test plan. Automated in `MFG ECO Tests` (codeunit 89016). Changes are creat
 | TEST-14 | The template ensured twice / one template starting with the ECO event, no duplicated steps (ECO-002) | `MFG ECO Workflow Tests.TheTemplateIsCreatedOnce` |
 | TEST-15 | Workflow method, no enabled workflow / sent for approval / refused | `MFG ECO Workflow Tests.SubmittingWithoutAnEnabledWorkflowIsRefused` |
 | TEST-16 | Workflow method, a pending change / approved on the card / refused, use Requests to Approve | `MFG ECO Workflow Tests.ApprovingOnTheCardIsRefusedUnderAWorkflow` |
+| TEST-17 | An implemented change; a firm planned order due later with two lines, one due before the effective date, a released one with posted entries, a released one without / impacted orders refreshed through a fake / two refreshed once each, two left alone (ECO-003) | `OnlyImpactedOrdersThatCanTakeTheChangeAreRefreshed` |
+| TEST-18 | An approved change / impacted orders refreshed / refused until implemented | `RefreshingImpactedOrdersNeedsAnImplementedChange` |

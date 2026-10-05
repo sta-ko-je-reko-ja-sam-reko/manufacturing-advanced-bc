@@ -157,6 +157,24 @@ page 85802 "MFG ECO Card"
                     CurrPage.Update(false);
                 end;
             }
+            action(RefreshImpactedOrders)
+            {
+                Caption = 'Refresh impacted orders';
+                ToolTip = 'Refresh the routing and components of the open production orders this implemented change impacts, so they use the versions valid on their dates. Orders due before the effective date and released orders with posted entries are left alone. With refresh protection on, what each refresh changes is recorded.';
+                Image = Refresh;
+
+                trigger OnAction()
+                var
+                    Engine: Codeunit "MFG ECO Engine";
+                    Refreshed: Integer;
+                    Skipped: Integer;
+                begin
+                    if not Confirm(RefreshImpactedQst, false, Rec."No.") then
+                        exit;
+                    Engine.RefreshImpactedOrders(Rec, Refreshed, Skipped);
+                    Message(RefreshedMsg, Refreshed, Skipped);
+                end;
+            }
             action(Approvals)
             {
                 Caption = 'Approvals';
@@ -218,6 +236,9 @@ page 85802 "MFG ECO Card"
                 actionref(ImplementRef; Implement)
                 {
                 }
+                actionref(RefreshImpactedOrdersRef; RefreshImpactedOrders)
+                {
+                }
                 actionref(ApprovalsRef; Approvals)
                 {
                 }
@@ -238,4 +259,6 @@ page 85802 "MFG ECO Card"
     var
         IsOpen: Boolean;
         ImplementQst: Label 'Certify the new versions of engineering change %1, starting on %2?', Comment = '%1 = the change number, %2 = the effective date';
+        RefreshImpactedQst: Label 'Refresh the open production orders that engineering change %1 impacts? Manual changes on their routing and components are replaced by the BOM and routing.', Comment = '%1 = the change number';
+        RefreshedMsg: Label '%1 production order(s) refreshed, %2 left alone.', Comment = '%1 = the number of orders refreshed, %2 = the number of orders skipped';
 }

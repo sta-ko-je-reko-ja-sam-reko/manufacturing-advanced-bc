@@ -20,11 +20,13 @@ add-on for: a shop floor terminal, engineering change orders and light finite lo
 
 ## Status
 
-**Every module on the roadmap has a first working segment, and five have a second** (WIP reconciliation with the G/L,
+**Every module on the roadmap has a first working segment, five have a second** (WIP reconciliation with the G/L,
 flushing against warehouse handling, order line protection, applying the finite plan, approval workflows for
-engineering changes). Each module is switched on separately, has its own setup, application area, API group, MCP
+engineering changes) **and four a third** (a nightly WIP run with history, protection against recalculations outside
+the Refresh batch job, finite loading of all work centers with operation order, refreshing the orders an engineering
+change impacts). Each module is switched on separately, has its own setup, application area, API group, MCP
 configuration with agent instructions, sample data with a configuration package, and a test codeunit. The test app
-holds 145 tests. Both projects build with zero errors and zero warnings against Business
+holds 158 tests. Both projects build with zero errors and zero warnings against Business
 Central 29 W1.
 
 | # | Feature | Kind | What it does |
