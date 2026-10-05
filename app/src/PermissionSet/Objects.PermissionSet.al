@@ -2,6 +2,7 @@ namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.CostDrift;
 using ManufacturingAdvanced.EngineeringChange;
+using ManufacturingAdvanced.FiniteLoading;
 using ManufacturingAdvanced.PlanningInsight;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
@@ -178,5 +179,21 @@ permissionset 85000 "MFG Objects"
         codeunit "MFG ECO No Object" = X,
         codeunit "MFG ECO Production BOM" = X,
         codeunit "MFG ECO Routing" = X,
-        codeunit "MFG Demo ECO" = X;
+        codeunit "MFG Demo ECO" = X,
+        table "MFG Loading Setup" = X,
+        table "MFG Load Plan Line" = X,
+        page "MFG Loading Setup" = X,
+        page "MFG Load Plan" = X,
+        page "MFG API Load Plan Line" = X,
+        page "MFG API Loading Work Center" = X,
+        page "MFG API Demo Loading" = X,
+        codeunit "MFG Loading Feature Setup" = X,
+        codeunit "MFG Loading App Area Sub." = X,
+        codeunit "MFG Loading Engine" = X,
+        codeunit "MFG Calendar Capacity" = X,
+        codeunit "MFG Loading Locator" = X,
+        codeunit "MFG Sequence By Due Date" = X,
+        codeunit "MFG Sequence By Order No." = X,
+        codeunit "MFG Sequence Shortest First" = X,
+        codeunit "MFG Demo Loading" = X;
 }

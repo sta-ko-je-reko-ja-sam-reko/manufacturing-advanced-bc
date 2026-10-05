@@ -2,6 +2,7 @@ namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.CostDrift;
 using ManufacturingAdvanced.EngineeringChange;
+using ManufacturingAdvanced.FiniteLoading;
 using ManufacturingAdvanced.PlanningInsight;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
@@ -52,5 +53,10 @@ enum 85000 "MFG Feature" implements "MFG IFeatureSetup"
     {
         Caption = 'Engineering change';
         Implementation = "MFG IFeatureSetup" = "MFG ECO Feature Setup";
+    }
+    value(8; MFGFiniteLoading)
+    {
+        Caption = 'Finite loading';
+        Implementation = "MFG IFeatureSetup" = "MFG Loading Feature Setup";
     }
 }

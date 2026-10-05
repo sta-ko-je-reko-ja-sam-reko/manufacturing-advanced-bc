@@ -2,6 +2,7 @@ namespace ManufacturingAdvanced.Core;
 
 using ManufacturingAdvanced.CostDrift;
 using ManufacturingAdvanced.EngineeringChange;
+using ManufacturingAdvanced.FiniteLoading;
 using ManufacturingAdvanced.PlanningInsight;
 using ManufacturingAdvanced.Preflight;
 using ManufacturingAdvanced.RefreshGuard;
@@ -42,5 +43,7 @@ permissionset 85001 "MFG Read"
         tabledata "MFG Shop Floor Event" = R,
         tabledata "MFG ECO Setup" = R,
         tabledata "MFG ECO Header" = R,
-        tabledata "MFG ECO Line" = R;
+        tabledata "MFG ECO Line" = R,
+        tabledata "MFG Loading Setup" = R,
+        tabledata "MFG Load Plan Line" = R;
 }
